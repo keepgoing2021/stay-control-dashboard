@@ -39,14 +39,14 @@ const rooms = [
 ];
 
 const channels = [
-  { id: "airbnb", name: "에어비앤비", status: "연결됨", commission: 15, multiplier: 1.05, revenue: 3280000, reservations: 18, color: "#d83b45" },
-  { id: "booking", name: "부킹닷컴", status: "연결됨", commission: 14, multiplier: 1.03, revenue: 4120000, reservations: 24, color: "#1d6ee8" },
-  { id: "agoda", name: "아고다", status: "연결됨", commission: 13, multiplier: 1.03, revenue: 2860000, reservations: 16, color: "#167b76" },
-  { id: "expedia", name: "익스피디아", status: "점검 필요", commission: 15, multiplier: 1.04, revenue: 980000, reservations: 6, color: "#d78a00" },
-  { id: "yanolja", name: "야놀자", status: "연결됨", commission: 12, multiplier: 1.02, revenue: 3560000, reservations: 21, color: "#5d5fef" },
-  { id: "yeogi", name: "여기어때", status: "연결됨", commission: 12, multiplier: 1.02, revenue: 2440000, reservations: 14, color: "#0f9f79" },
-  { id: "naver", name: "네이버예약", status: "연결됨", commission: 6, multiplier: 1.0, revenue: 1310000, reservations: 10, color: "#20a060" },
-  { id: "trip", name: "트립닷컴", status: "연결 대기", commission: 13, multiplier: 1.04, revenue: 620000, reservations: 4, color: "#3550aa" },
+  { id: "airbnb", name: "에어비앤비", status: "연결됨", commission: 15, multiplier: 1.05, revenue: 3280000, reservations: 18, color: "#d83b45", lastSync: "2분 전", healthNote: "가격·재고 정상" },
+  { id: "booking", name: "부킹닷컴", status: "연결됨", commission: 14, multiplier: 1.03, revenue: 4120000, reservations: 24, color: "#1d6ee8", lastSync: "1분 전", healthNote: "예약 수신 정상" },
+  { id: "agoda", name: "아고다", status: "연결됨", commission: 13, multiplier: 1.03, revenue: 2860000, reservations: 16, color: "#167b76", lastSync: "4분 전", healthNote: "재고 반영 정상" },
+  { id: "expedia", name: "익스피디아", status: "점검 필요", commission: 15, multiplier: 1.04, revenue: 980000, reservations: 6, color: "#d78a00", lastSync: "18분 전", healthNote: "가격·재고 확인 필요" },
+  { id: "yanolja", name: "야놀자", status: "연결됨", commission: 12, multiplier: 1.02, revenue: 3560000, reservations: 21, color: "#5d5fef", lastSync: "3분 전", healthNote: "국내 채널 정상" },
+  { id: "yeogi", name: "여기어때", status: "연결됨", commission: 12, multiplier: 1.02, revenue: 2440000, reservations: 14, color: "#0f9f79", lastSync: "5분 전", healthNote: "가격 배율 정상" },
+  { id: "naver", name: "네이버예약", status: "연결됨", commission: 6, multiplier: 1.0, revenue: 1310000, reservations: 10, color: "#20a060", lastSync: "6분 전", healthNote: "직접 예약 정상" },
+  { id: "trip", name: "트립닷컴", status: "연결 대기", commission: 13, multiplier: 1.04, revenue: 620000, reservations: 4, color: "#3550aa", lastSync: "연결 전", healthNote: "객실 매핑 대기" },
 ];
 
 const reservations = [
@@ -106,6 +106,19 @@ const rules = [
   { id: "rule_weekend", name: "주말 할증", condition: "금·토", value: "+20%", enabled: true },
   { id: "rule_last_minute", name: "임박 공실 할인", condition: "체크인 3일 전", value: "-10%", enabled: true },
   { id: "rule_high_occupancy", name: "높은 점유율 할증", condition: "점유율 80% 이상", value: "+15%", enabled: true },
+];
+
+const maintenanceTasks = [
+  { id: "task_001", roomId: "room_104", type: "청소", title: "퇴실 청소", detail: "최유진 체크아웃 후 재판매 준비", priority: "긴급", due: "10:30", assignee: "하우스키핑 A", status: "대기", nextStatus: "판매 가능" },
+  { id: "task_002", roomId: "room_602B", type: "청소", title: "도미토리 침구 교체", detail: "한지수 체크아웃, 내일 김채린 입실", priority: "높음", due: "12:00", assignee: "하우스키핑 B", status: "진행 중", nextStatus: "판매 가능" },
+  { id: "task_003", roomId: "room_304", type: "점검", title: "욕실 배수 확인", detail: "반복 신고 2회, 판매 재개 전 확인", priority: "높음", due: "15:00", assignee: "시설 담당", status: "대기", nextStatus: "판매 가능" },
+  { id: "task_004", roomId: "room_103", type: "청소", title: "입실 전 객실 재확인", detail: "아고다 도착 전 어메니티 보충", priority: "보통", due: "13:30", assignee: "프런트", status: "대기", nextStatus: "판매 가능" },
+];
+
+const maintenanceHistory = [
+  { id: "log_001", roomId: "room_502", title: "냉장고 소음 확인", completedAt: "08:20", assignee: "시설 담당", result: "완료" },
+  { id: "log_002", roomId: "room_301", title: "수건 추가 세팅", completedAt: "08:05", assignee: "하우스키핑 A", result: "완료" },
+  { id: "log_003", roomId: "room_601A", title: "공용 샤워실 소모품 보충", completedAt: "07:40", assignee: "프런트", result: "완료" },
 ];
 
 const monthlyRevenue = [
@@ -169,7 +182,7 @@ function getRoom(id) {
 
 function roomStateClass(status) {
   if (status === "판매 중지" || status === "점검 중") return "blocked";
-  if (status === "청소 필요") return "cleaning";
+  if (status === "청소 필요" || status === "청소 중") return "cleaning";
   return "";
 }
 
@@ -219,6 +232,37 @@ function getTodayDepartures() {
 
 function getPendingPricingRecommendations() {
   return pricingRecommendations.filter((item) => item.status === "승인 대기");
+}
+
+function getOpenMaintenanceTasks() {
+  return maintenanceTasks.filter((task) => task.status !== "완료");
+}
+
+function getRoomMaintenanceTasks(roomId) {
+  return getOpenMaintenanceTasks().filter((task) => task.roomId === roomId);
+}
+
+function getRoomsNeedingAttention() {
+  const taskRoomIds = new Set(getOpenMaintenanceTasks().map((task) => task.roomId));
+  return rooms.filter((room) => room.status !== "판매 가능" || taskRoomIds.has(room.id));
+}
+
+function getNextReservation(roomId) {
+  return reservations
+    .filter((reservation) => reservation.roomId === roomId && reservation.checkIn >= dateKey(TODAY))
+    .sort((a, b) => a.checkIn.localeCompare(b.checkIn))[0];
+}
+
+function maintenanceStatusClass(status) {
+  if (status === "완료") return "approved";
+  if (status === "진행 중") return "pending";
+  return "hold";
+}
+
+function priorityClass(priority) {
+  if (priority === "긴급") return "urgent";
+  if (priority === "높음") return "high";
+  return "normal";
 }
 
 function formatShortDate(value) {
@@ -278,11 +322,12 @@ function renderKpis() {
 function renderTodayMetricStrip() {
   const kpis = calculateKpis();
   const channelIssues = channels.filter((channel) => channel.status !== "연결됨").length;
-  const cleaningRooms = rooms.filter((room) => room.status === "청소 필요").length;
+  const openMaintenance = getOpenMaintenanceTasks();
+  const roomIssues = getRoomsNeedingAttention().length;
   const metrics = [
     { label: "점유율", value: `${kpis.occupancy}%`, note: `판매 가능 ${availableRoomsOn(TODAY)}실` },
     { label: "오늘 매출", value: formatWon(kpis.todayRevenue), note: `평균 ${formatWon(kpis.averageDailyRoom)}` },
-    { label: "청소 필요", value: `${cleaningRooms}실`, note: "퇴실 후 재확인" },
+    { label: "청소·점검", value: `${openMaintenance.length}건`, note: `객실 ${roomIssues}개 확인` },
     { label: "채널 문제", value: `${channelIssues}개`, note: "동기화 확인" },
   ];
 
@@ -371,11 +416,38 @@ function renderChannelIssueRows(rows) {
   `;
 }
 
+function renderMaintenancePreviewRows(rows) {
+  if (!rows.length) {
+    return `<div class="empty-row">열린 청소·점검 작업이 없습니다.</div>`;
+  }
+
+  return `
+    <div class="mini-reservation-list">
+      ${rows
+        .slice(0, 4)
+        .map((task) => {
+          const room = getRoom(task.roomId);
+          return `
+            <div class="mini-reservation-row">
+              <div>
+                <strong>${room.name} · ${task.title}</strong>
+                <span>${task.due}까지 · ${task.assignee}</span>
+              </div>
+              <span class="status-badge ${maintenanceStatusClass(task.status)}">${task.status}</span>
+            </div>
+          `;
+        })
+        .join("")}
+    </div>
+  `;
+}
+
 function renderTodayWorkflow() {
   const arrivals = getTodayArrivals();
   const departures = getTodayDepartures();
   const pendingPrices = getPendingPricingRecommendations();
   const channelIssues = channels.filter((channel) => channel.status !== "연결됨");
+  const openMaintenance = getOpenMaintenanceTasks();
   const expectedDelta = pendingPrices.reduce((sum, item) => sum + item.delta, 0);
   const cards = [
     {
@@ -391,12 +463,12 @@ function renderTodayWorkflow() {
     {
       step: "2",
       title: "퇴실·청소",
-      count: `${departures.length}팀`,
-      note: `청소 필요 ${rooms.filter((room) => room.status === "청소 필요").length}실`,
-      action: "퇴실 목록",
-      view: "reservations",
+      count: `${openMaintenance.filter((task) => task.type === "청소").length}건`,
+      note: `퇴실 ${departures.length}팀 · 점검 ${openMaintenance.filter((task) => task.type === "점검").length}건`,
+      action: "작업 보기",
+      scrollTarget: "maintenance-center",
       tone: "teal",
-      body: renderMiniReservationRows(departures, "오늘 퇴실 예약이 없습니다."),
+      body: renderMaintenancePreviewRows(openMaintenance),
     },
     {
       step: "3",
@@ -436,7 +508,7 @@ function renderTodayWorkflow() {
                   <strong>${card.count}</strong>
                 </div>
                 <div class="ops-card-body">${card.body}</div>
-                <button class="ghost-button" data-view-jump="${card.view}" type="button">${card.action}</button>
+                <button class="ghost-button" ${card.scrollTarget ? `data-scroll-target="${card.scrollTarget}"` : `data-view-jump="${card.view}"`} type="button">${card.action}</button>
               </article>
             `,
           )
@@ -534,6 +606,183 @@ function renderTodayFocusList() {
         )
         .join("")}
     </div>
+  `;
+}
+
+function renderMaintenanceTaskList() {
+  const tasks = getOpenMaintenanceTasks();
+  if (!tasks.length) {
+    return `<div class="empty-row">오늘 열린 유지보수 작업이 없습니다.</div>`;
+  }
+
+  return `
+    <div class="maintenance-task-list">
+      ${tasks
+        .map((task) => {
+          const room = getRoom(task.roomId);
+          return `
+            <article class="maintenance-task">
+              <div class="task-room">
+                <strong>${room.name}</strong>
+                <span>${room.type}</span>
+              </div>
+              <div class="task-main">
+                <div class="task-title-row">
+                  <span class="task-type">${task.type}</span>
+                  <strong>${task.title}</strong>
+                  <span class="priority-chip ${priorityClass(task.priority)}">${task.priority}</span>
+                </div>
+                <p>${task.detail}</p>
+                <div class="task-meta">
+                  <span>담당 ${task.assignee}</span>
+                  <span>마감 ${task.due}</span>
+                  <span>객실상태 ${room.status}</span>
+                </div>
+              </div>
+              <div class="task-actions">
+                <span class="status-badge ${maintenanceStatusClass(task.status)}">${task.status}</span>
+                ${task.status === "대기" ? `<button class="quiet-button task-start" data-task="${task.id}" type="button">시작</button>` : ""}
+                <button class="primary-button task-complete" data-task="${task.id}" type="button">완료</button>
+              </div>
+            </article>
+          `;
+        })
+        .join("")}
+    </div>
+  `;
+}
+
+function renderRoomStatusBoard() {
+  const attentionRooms = getRoomsNeedingAttention().slice(0, 6);
+  return `
+    <div class="room-status-board">
+      ${attentionRooms
+        .map((room) => {
+          const nextReservation = getNextReservation(room.id);
+          const taskCount = getRoomMaintenanceTasks(room.id).length;
+          return `
+            <article class="room-status-card">
+              <div>
+                <strong>${room.name}</strong>
+                <span>${room.type} · ${taskCount ? `작업 ${taskCount}건` : "수동 확인"}</span>
+              </div>
+              <span class="room-state ${roomStateClass(room.status)}">${room.status}</span>
+              <p>${nextReservation ? `${formatShortDate(nextReservation.checkIn)} ${nextReservation.guest} 입실` : "예정 입실 없음"}</p>
+              <div class="status-actions">
+                ${["판매 가능", "청소 필요", "점검 중", "판매 중지"]
+                  .map((status) => `<button class="quiet-button room-status-action" data-room="${room.id}" data-status="${status}" type="button">${status}</button>`)
+                  .join("")}
+              </div>
+            </article>
+          `;
+        })
+        .join("")}
+    </div>
+  `;
+}
+
+function renderChannelHealthBoard() {
+  return `
+    <div class="channel-health-list">
+      ${channels
+        .map(
+          (channel) => `
+            <div class="channel-health-row">
+              <span class="status-dot ${channel.status === "연결됨" ? "good" : channel.status === "점검 필요" ? "warn" : "bad"}"></span>
+              <div>
+                <strong>${channel.name}</strong>
+                <span>${channel.lastSync} · ${channel.healthNote}</span>
+              </div>
+              <button class="quiet-button channel-health-check" data-channel="${channel.name}" type="button">확인</button>
+            </div>
+          `,
+        )
+        .join("")}
+    </div>
+  `;
+}
+
+function renderMaintenanceLog() {
+  const completedTasks = maintenanceTasks
+    .filter((task) => task.status === "완료")
+    .map((task) => ({
+      id: `${task.id}_log`,
+      roomId: task.roomId,
+      title: task.title,
+      completedAt: task.completedAt || "방금",
+      assignee: task.assignee,
+      result: "완료",
+    }));
+  const logs = [...completedTasks, ...maintenanceHistory].slice(0, 5);
+
+  return `
+    <div class="maintenance-log">
+      ${logs
+        .map((log) => {
+          const room = getRoom(log.roomId);
+          return `
+            <div class="log-row">
+              <span>${log.completedAt}</span>
+              <strong>${room.name} · ${log.title}</strong>
+              <small>${log.assignee} · ${log.result}</small>
+            </div>
+          `;
+        })
+        .join("")}
+    </div>
+  `;
+}
+
+function renderMaintenanceCenter() {
+  const openTasks = getOpenMaintenanceTasks();
+  const channelIssues = channels.filter((channel) => channel.status !== "연결됨");
+  const blockedRooms = rooms.filter((room) => room.status === "점검 중" || room.status === "판매 중지");
+  const cleaningTasks = openTasks.filter((task) => task.type === "청소");
+  return `
+    <section class="section-band maintenance-center" id="maintenance-center">
+      <div class="section-head">
+        <div>
+          <h2>운영 유지보수</h2>
+          <p>객실 상태, 청소·점검 작업, 채널 동기화를 한 번에 확인합니다.</p>
+        </div>
+      </div>
+      <div class="maintenance-summary">
+        <div><span>열린 작업</span><strong>${openTasks.length}건</strong></div>
+        <div><span>청소 작업</span><strong>${cleaningTasks.length}건</strong></div>
+        <div><span>판매 제한</span><strong>${blockedRooms.length}실</strong></div>
+        <div><span>채널 확인</span><strong>${channelIssues.length}개</strong></div>
+      </div>
+      <div class="maintenance-grid">
+        <div class="maintenance-panel maintenance-panel-wide">
+          <div class="panel-head">
+            <h3>오늘 작업 큐</h3>
+            <span>완료하면 객실 상태와 기록이 갱신됩니다.</span>
+          </div>
+          ${renderMaintenanceTaskList()}
+        </div>
+        <div class="maintenance-panel">
+          <div class="panel-head">
+            <h3>객실 상태 변경</h3>
+            <span>판매 가능 여부를 빠르게 바꿉니다.</span>
+          </div>
+          ${renderRoomStatusBoard()}
+        </div>
+        <div class="maintenance-panel">
+          <div class="panel-head">
+            <h3>채널 건강상태</h3>
+            <span>동기화 지연과 연결 대기를 확인합니다.</span>
+          </div>
+          ${renderChannelHealthBoard()}
+        </div>
+      </div>
+      <div class="maintenance-panel">
+        <div class="panel-head">
+          <h3>완료 기록</h3>
+          <span>오늘 처리된 작업 이력입니다.</span>
+        </div>
+        ${renderMaintenanceLog()}
+      </div>
+    </section>
   `;
 }
 
@@ -657,11 +906,12 @@ function renderTodayView() {
         <div class="ops-summary">
           <span class="eyebrow">2026년 7월 2일 목요일 · 오전 9시 기준</span>
           <h2>입실 ${kpis.checkIns}팀, 퇴실 ${kpis.checkOuts}팀, 가격 승인 ${kpis.pending}건</h2>
-          <p>입실 준비 → 퇴실·청소 → 가격 승인 → 채널 점검</p>
+          <p>입실 준비 → 퇴실·청소 → 객실 점검 → 가격 승인 → 채널 점검</p>
         </div>
         ${renderTodayMetricStrip()}
       </section>
       ${renderTodayWorkflow()}
+      ${renderMaintenanceCenter()}
       <div class="two-column ops-columns">
         <section class="section-band">
           <div class="section-head">
@@ -695,6 +945,7 @@ function renderTodayView() {
     </div>
   `;
   bindCommonControls();
+  bindMaintenanceControls();
 }
 
 function renderReservationsView() {
@@ -1156,6 +1407,49 @@ function bindChannelControls() {
   });
 }
 
+function bindMaintenanceControls() {
+  document.querySelectorAll(".task-start").forEach((button) => {
+    button.addEventListener("click", () => {
+      const task = maintenanceTasks.find((item) => item.id === button.dataset.task);
+      if (!task) return;
+      task.status = "진행 중";
+      const room = getRoom(task.roomId);
+      if (task.type === "청소") room.status = "청소 중";
+      showToast(`${room.name} ${task.title} 작업을 시작했습니다.`);
+      renderTodayView();
+    });
+  });
+
+  document.querySelectorAll(".task-complete").forEach((button) => {
+    button.addEventListener("click", () => {
+      const task = maintenanceTasks.find((item) => item.id === button.dataset.task);
+      if (!task) return;
+      task.status = "완료";
+      task.completedAt = "방금";
+      const room = getRoom(task.roomId);
+      room.status = task.nextStatus || "판매 가능";
+      showToast(`${room.name} ${task.title} 작업을 완료했습니다.`);
+      renderTodayView();
+    });
+  });
+
+  document.querySelectorAll(".room-status-action").forEach((button) => {
+    button.addEventListener("click", () => {
+      const room = getRoom(button.dataset.room);
+      if (!room) return;
+      room.status = button.dataset.status;
+      showToast(`${room.name} 객실 상태를 '${room.status}' 상태로 변경했습니다.`);
+      renderTodayView();
+    });
+  });
+
+  document.querySelectorAll(".channel-health-check").forEach((button) => {
+    button.addEventListener("click", () => {
+      showToast(`${button.dataset.channel} 채널 상태를 확인했습니다.`);
+    });
+  });
+}
+
 function bindShellControls() {
   document.querySelectorAll("[data-view]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -1166,9 +1460,17 @@ function bindShellControls() {
 
   document.body.addEventListener("click", (event) => {
     const jump = event.target.closest("[data-view-jump]");
-    if (!jump) return;
-    state.view = jump.dataset.viewJump;
-    render();
+    if (jump) {
+      state.view = jump.dataset.viewJump;
+      render();
+      return;
+    }
+
+    const scrollTarget = event.target.closest("[data-scroll-target]");
+    if (!scrollTarget) return;
+    const target = document.getElementById(scrollTarget.dataset.scrollTarget);
+    if (!target) return;
+    target.scrollIntoView({ behavior: "smooth", block: "start" });
   });
 
   document.getElementById("sync-button")?.addEventListener("click", () => {

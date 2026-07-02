@@ -395,7 +395,10 @@ button {
 .ops-card,
 .channel-card,
 .price-card,
-.rule-card {
+.rule-card,
+.maintenance-panel,
+.maintenance-task,
+.room-status-card {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface);
@@ -414,6 +417,9 @@ button {
 .rule-card:hover,
 .movement-column:hover,
 .focus-item:hover,
+.maintenance-panel:hover,
+.maintenance-task:hover,
+.room-status-card:hover,
 .chart-card:hover,
 .table-card:hover {
   transform: translateY(-3px);
@@ -846,6 +852,282 @@ button {
   color: var(--muted);
   font-size: 12px;
   font-weight: 700;
+}
+
+.maintenance-center {
+  display: grid;
+  gap: 14px;
+}
+
+.maintenance-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.maintenance-summary div {
+  min-height: 78px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background:
+    linear-gradient(140deg, rgba(0, 255, 255, 0.08), rgba(255, 0, 255, 0.045)),
+    var(--surface);
+}
+
+.maintenance-summary span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.maintenance-summary strong {
+  margin-top: 7px;
+  color: var(--teal);
+  font-family: var(--font-number);
+  font-size: 25px;
+  font-weight: 900;
+}
+
+.maintenance-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(290px, 0.6fr) minmax(290px, 0.6fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.maintenance-panel {
+  min-width: 0;
+  padding: 16px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0.025)),
+    var(--surface);
+}
+
+.maintenance-panel-wide {
+  min-height: 100%;
+}
+
+.panel-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: start;
+  margin-bottom: 12px;
+}
+
+.panel-head h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.panel-head span {
+  max-width: 280px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
+  text-align: right;
+}
+
+.maintenance-task-list,
+.room-status-board,
+.channel-health-list,
+.maintenance-log {
+  display: grid;
+  gap: 10px;
+}
+
+.maintenance-task {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  background:
+    linear-gradient(90deg, rgba(0, 255, 255, 0.06), transparent 58%),
+    rgba(0, 0, 0, 0.2);
+}
+
+.task-room {
+  min-height: 58px;
+  display: grid;
+  place-content: center;
+  border-radius: 8px;
+  color: #111111;
+  background: var(--teal);
+  text-align: center;
+}
+
+.task-room strong {
+  font-family: var(--font-number);
+  font-size: 19px;
+  font-weight: 900;
+}
+
+.task-room span {
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.task-main {
+  min-width: 0;
+}
+
+.task-title-row,
+.task-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.task-title-row strong {
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.task-type,
+.priority-chip {
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.task-type {
+  color: #111111;
+  background: var(--blue);
+}
+
+.priority-chip.urgent {
+  color: #111111;
+  background: var(--red);
+}
+
+.priority-chip.high {
+  color: #111111;
+  background: var(--amber);
+}
+
+.priority-chip.normal {
+  color: #111111;
+  background: var(--green);
+}
+
+.task-main p {
+  margin: 7px 0;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.task-meta span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.task-actions {
+  display: grid;
+  gap: 8px;
+  justify-items: end;
+}
+
+.room-status-card {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.room-status-card > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.room-status-card strong,
+.channel-health-row strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.room-status-card span:not(.room-state),
+.channel-health-row span:not(.status-dot) {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.room-status-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.status-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.status-actions .quiet-button {
+  min-width: 0;
+  padding-inline: 8px;
+  font-size: 11px;
+}
+
+.channel-health-row,
+.log-row {
+  min-height: 50px;
+  display: grid;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.channel-health-row {
+  grid-template-columns: auto 1fr auto;
+}
+
+.log-row {
+  grid-template-columns: 54px minmax(0, 1fr) auto;
+}
+
+.log-row span {
+  color: var(--teal);
+  font-family: var(--font-number);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.log-row strong,
+.log-row small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.log-row strong {
+  font-size: 13px;
+}
+
+.log-row small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
 }
 
 .two-column {
@@ -1527,6 +1809,8 @@ tr:last-child td {
   .two-column,
   .ops-overview,
   .ops-workflow,
+  .maintenance-summary,
+  .maintenance-grid,
   .guest-board,
   .pricing-grid,
   .channel-grid,
@@ -1545,6 +1829,40 @@ tr:last-child td {
   }
 
   .focus-item .quiet-button {
+    grid-column: 1 / -1;
+  }
+
+  .panel-head,
+  .maintenance-task,
+  .log-row {
+    grid-template-columns: 1fr;
+  }
+
+  .panel-head {
+    display: grid;
+  }
+
+  .panel-head span {
+    max-width: none;
+    text-align: left;
+  }
+
+  .task-room {
+    min-height: 48px;
+    place-content: center start;
+    padding: 0 12px;
+    text-align: left;
+  }
+
+  .task-actions {
+    justify-items: stretch;
+  }
+
+  .channel-health-row {
+    grid-template-columns: auto 1fr;
+  }
+
+  .channel-health-row .quiet-button {
     grid-column: 1 / -1;
   }
 }
