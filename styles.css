@@ -20,14 +20,12 @@
   --teal: #00ffff;
   --teal-soft: rgba(0, 255, 255, 0.14);
   --shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
-  --display-font: Georgia, "Times New Roman", serif;
+  --font-ui: "Pretendard Variable", Pretendard, InterVariable, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
+  --font-number: InterVariable, Inter, "Pretendard Variable", Pretendard, "Segoe UI", Roboto, sans-serif;
+  --display-font: var(--font-ui);
   font-family:
-    "Inter",
-    "Pretendard",
-    "Apple SD Gothic Neo",
-    "Noto Sans KR",
-    system-ui,
-    sans-serif;
+    var(--font-ui);
+  font-feature-settings: "liga" 1, "calt" 1, "tnum" 1;
 }
 
 * {
@@ -43,6 +41,10 @@ body {
     linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
     linear-gradient(125deg, #000000 0%, #171717 42%, #2d2d2d 72%, #000000 100%);
   background-size: 32px 32px, 32px 32px, 100% 100%;
+  font-family: var(--font-ui);
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 button,
@@ -90,6 +92,7 @@ button {
   display: block;
   font-family: var(--display-font);
   font-size: 18px;
+  font-weight: 900;
   letter-spacing: 0;
   color: transparent;
   background: linear-gradient(90deg, var(--teal), #ffffff 45%, var(--red));
@@ -253,7 +256,8 @@ button {
 .topbar h1 {
   margin: 2px 0 0;
   font-family: var(--display-font);
-  font-size: 34px;
+  font-size: 30px;
+  font-weight: 900;
   line-height: 1;
   letter-spacing: 0;
 }
@@ -443,10 +447,11 @@ button {
 
 .kpi-value {
   margin-top: 12px;
-  font-family: var(--display-font);
+  font-family: var(--font-number);
   font-size: 30px;
   font-weight: 900;
   line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
 .kpi-sub {
@@ -506,8 +511,9 @@ button {
   margin: 12px 0 8px;
   max-width: 520px;
   font-family: var(--display-font);
-  font-size: 36px;
-  line-height: 1.05;
+  font-size: 34px;
+  font-weight: 900;
+  line-height: 1.14;
   letter-spacing: 0;
   word-break: keep-all;
 }
@@ -550,9 +556,11 @@ button {
 .metric-item strong {
   display: block;
   margin: 7px 0 5px;
-  font-family: var(--display-font);
+  font-family: var(--font-number);
   font-size: 23px;
+  font-weight: 900;
   line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
 .ops-workflow {
@@ -618,7 +626,8 @@ button {
 .ops-card h3 {
   margin: 1px 0 4px;
   font-family: var(--display-font);
-  font-size: 22px;
+  font-size: 19px;
+  font-weight: 900;
 }
 
 .ops-card p {
@@ -630,9 +639,11 @@ button {
 
 .ops-card-head > strong {
   color: var(--ops-accent);
-  font-family: var(--display-font);
+  font-family: var(--font-number);
   font-size: 22px;
+  font-weight: 900;
   line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
 .ops-card-body {
@@ -667,6 +678,7 @@ button {
 .mini-reservation-row strong {
   display: block;
   font-size: 13px;
+  font-weight: 850;
 }
 
 .mini-reservation-row span {
@@ -704,10 +716,14 @@ button {
 
 .delta-up {
   color: var(--green);
+  font-family: var(--font-number);
+  font-variant-numeric: tabular-nums;
 }
 
 .delta-down {
   color: var(--red);
+  font-family: var(--font-number);
+  font-variant-numeric: tabular-nums;
 }
 
 .ops-columns {
@@ -743,6 +759,8 @@ button {
 
 .movement-title strong {
   color: var(--blue);
+  font-family: var(--font-number);
+  font-variant-numeric: tabular-nums;
 }
 
 .movement-row {
@@ -851,7 +869,8 @@ button {
 .section-head h2 {
   margin: 0;
   font-family: var(--display-font);
-  font-size: 24px;
+  font-size: 21px;
+  font-weight: 900;
 }
 
 .section-head p {
@@ -1218,7 +1237,9 @@ select option {
 .price-compare strong {
   display: block;
   margin-top: 4px;
+  font-family: var(--font-number);
   font-size: 19px;
+  font-variant-numeric: tabular-nums;
 }
 
 .arrow-token {
@@ -1290,6 +1311,8 @@ select option {
 .mini-stat strong {
   display: block;
   margin-top: 5px;
+  font-family: var(--font-number);
+  font-variant-numeric: tabular-nums;
 }
 
 .rule-grid {
@@ -1425,6 +1448,7 @@ td {
   border-bottom: 1px solid var(--line);
   text-align: left;
   font-size: 13px;
+  font-variant-numeric: tabular-nums;
 }
 
 th {
