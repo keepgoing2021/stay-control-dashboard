@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>스테이컨트롤 | 숙박 운영 대시보드</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="주요 메뉴">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div>
+            <strong>스테이컨트롤</strong>
+            <p>호스텔 운영 대시보드</p>
+          </div>
+        </div>
+
+        <nav class="nav-list">
+          <button class="nav-item active" data-view="today" type="button">
+            <span class="nav-icon">⌂</span>
+            오늘의 운영
+          </button>
+          <button class="nav-item" data-view="reservations" type="button">
+            <span class="nav-icon">▦</span>
+            객실·예약 관리
+          </button>
+          <button class="nav-item" data-view="channels" type="button">
+            <span class="nav-icon">⇄</span>
+            예약채널 관리
+          </button>
+          <button class="nav-item" data-view="pricing" type="button">
+            <span class="nav-icon">₩</span>
+            가격 최적화
+          </button>
+          <button class="nav-item" data-view="reports" type="button">
+            <span class="nav-icon">▥</span>
+            수익 분석
+          </button>
+        </nav>
+
+        <div class="sidebar-panel">
+          <span class="panel-label">운영 숙소</span>
+          <strong>서울스테이 호스텔</strong>
+          <p>객실 32개 · 명동</p>
+          <div class="health-row">
+            <span class="status-dot good"></span>
+            예약채널 7개 정상
+          </div>
+        </div>
+      </aside>
+
+      <main class="main-shell">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">2026년 7월 2일 목요일</p>
+            <h1 id="page-title">오늘의 운영</h1>
+          </div>
+          <div class="topbar-actions">
+            <button class="ghost-button" id="sync-button" type="button">
+              <span aria-hidden="true">⇄</span>
+              전체 동기화
+            </button>
+            <button class="primary-button" data-view-jump="pricing" type="button">
+              가격 승인 보기
+              <span id="approval-count-chip">8</span>
+            </button>
+          </div>
+        </header>
+
+        <section class="content" id="content" aria-live="polite"></section>
+      </main>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

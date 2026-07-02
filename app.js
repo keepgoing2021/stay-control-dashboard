@@ -1,0 +1,996 @@
+const TODAY = new Date("2026-07-02T09:00:00+09:00");
+
+const state = {
+  view: "today",
+  timelineStart: new Date("2026-07-02T00:00:00+09:00"),
+  roomTypeFilter: "전체",
+  search: "",
+  alertBeforeAutoChange: true,
+};
+
+const roomTypes = ["스탠다드", "디럭스", "패밀리룸", "도미토리"];
+
+const rooms = [
+  { id: "room_101", name: "101", type: "스탠다드", floor: 1, status: "판매 가능", weekday: 69000, weekend: 89000 },
+  { id: "room_102", name: "102", type: "스탠다드", floor: 1, status: "판매 가능", weekday: 69000, weekend: 89000 },
+  { id: "room_103", name: "103", type: "스탠다드", floor: 1, status: "청소 필요", weekday: 69000, weekend: 89000 },
+  { id: "room_104", name: "104", type: "스탠다드", floor: 1, status: "판매 가능", weekday: 69000, weekend: 89000 },
+  { id: "room_105", name: "105", type: "스탠다드", floor: 1, status: "판매 가능", weekday: 69000, weekend: 89000 },
+  { id: "room_106", name: "106", type: "스탠다드", floor: 1, status: "판매 가능", weekday: 69000, weekend: 89000 },
+  { id: "room_107", name: "107", type: "스탠다드", floor: 1, status: "판매 가능", weekday: 69000, weekend: 89000 },
+  { id: "room_108", name: "108", type: "스탠다드", floor: 1, status: "판매 가능", weekday: 69000, weekend: 89000 },
+  { id: "room_201", name: "201", type: "디럭스", floor: 2, status: "판매 가능", weekday: 89000, weekend: 119000 },
+  { id: "room_202", name: "202", type: "디럭스", floor: 2, status: "판매 가능", weekday: 89000, weekend: 119000 },
+  { id: "room_203", name: "203", type: "디럭스", floor: 2, status: "판매 가능", weekday: 89000, weekend: 119000 },
+  { id: "room_204", name: "204", type: "디럭스", floor: 2, status: "판매 중지", weekday: 89000, weekend: 119000 },
+  { id: "room_205", name: "205", type: "디럭스", floor: 2, status: "판매 가능", weekday: 89000, weekend: 119000 },
+  { id: "room_206", name: "206", type: "디럭스", floor: 2, status: "판매 가능", weekday: 89000, weekend: 119000 },
+  { id: "room_207", name: "207", type: "디럭스", floor: 2, status: "판매 가능", weekday: 89000, weekend: 119000 },
+  { id: "room_208", name: "208", type: "디럭스", floor: 2, status: "판매 가능", weekday: 89000, weekend: 119000 },
+  { id: "room_209", name: "209", type: "디럭스", floor: 2, status: "판매 가능", weekday: 89000, weekend: 119000 },
+  { id: "room_210", name: "210", type: "디럭스", floor: 2, status: "판매 가능", weekday: 89000, weekend: 119000 },
+  { id: "room_301", name: "301", type: "패밀리룸", floor: 3, status: "판매 가능", weekday: 139000, weekend: 179000 },
+  { id: "room_302", name: "302", type: "패밀리룸", floor: 3, status: "판매 가능", weekday: 139000, weekend: 179000 },
+  { id: "room_303", name: "303", type: "패밀리룸", floor: 3, status: "판매 가능", weekday: 139000, weekend: 179000 },
+  { id: "room_304", name: "304", type: "패밀리룸", floor: 3, status: "점검 중", weekday: 139000, weekend: 179000 },
+  { id: "room_305", name: "305", type: "패밀리룸", floor: 3, status: "판매 가능", weekday: 139000, weekend: 179000 },
+  { id: "room_306", name: "306", type: "패밀리룸", floor: 3, status: "판매 가능", weekday: 139000, weekend: 179000 },
+  { id: "room_401A", name: "401A", type: "도미토리", floor: 4, status: "판매 가능", weekday: 39000, weekend: 49000 },
+  { id: "room_401B", name: "401B", type: "도미토리", floor: 4, status: "판매 가능", weekday: 39000, weekend: 49000 },
+  { id: "room_402A", name: "402A", type: "도미토리", floor: 4, status: "판매 가능", weekday: 39000, weekend: 49000 },
+  { id: "room_402B", name: "402B", type: "도미토리", floor: 4, status: "판매 가능", weekday: 39000, weekend: 49000 },
+  { id: "room_403A", name: "403A", type: "도미토리", floor: 4, status: "판매 가능", weekday: 39000, weekend: 49000 },
+  { id: "room_403B", name: "403B", type: "도미토리", floor: 4, status: "판매 가능", weekday: 39000, weekend: 49000 },
+  { id: "room_404A", name: "404A", type: "도미토리", floor: 4, status: "판매 가능", weekday: 39000, weekend: 49000 },
+  { id: "room_404B", name: "404B", type: "도미토리", floor: 4, status: "판매 가능", weekday: 39000, weekend: 49000 },
+];
+
+const channels = [
+  { id: "airbnb", name: "에어비앤비", status: "연결됨", commission: 15, multiplier: 1.05, revenue: 3280000, reservations: 18, color: "#d83b45" },
+  { id: "booking", name: "부킹닷컴", status: "연결됨", commission: 14, multiplier: 1.03, revenue: 4120000, reservations: 24, color: "#1d6ee8" },
+  { id: "agoda", name: "아고다", status: "연결됨", commission: 13, multiplier: 1.03, revenue: 2860000, reservations: 16, color: "#167b76" },
+  { id: "expedia", name: "익스피디아", status: "점검 필요", commission: 15, multiplier: 1.04, revenue: 980000, reservations: 6, color: "#d78a00" },
+  { id: "yanolja", name: "야놀자", status: "연결됨", commission: 12, multiplier: 1.02, revenue: 3560000, reservations: 21, color: "#5d5fef" },
+  { id: "yeogi", name: "여기어때", status: "연결됨", commission: 12, multiplier: 1.02, revenue: 2440000, reservations: 14, color: "#0f9f79" },
+  { id: "naver", name: "네이버예약", status: "연결됨", commission: 6, multiplier: 1.0, revenue: 1310000, reservations: 10, color: "#20a060" },
+  { id: "trip", name: "트립닷컴", status: "연결 대기", commission: 13, multiplier: 1.04, revenue: 620000, reservations: 4, color: "#3550aa" },
+];
+
+const reservations = [
+  { id: "res_001", guest: "김민준", roomId: "room_101", channel: "yanolja", checkIn: "2026-07-02", checkOut: "2026-07-04", amount: 178000, status: "투숙 중" },
+  { id: "res_002", guest: "박한산", roomId: "room_102", channel: "booking", checkIn: "2026-07-03", checkOut: "2026-07-05", amount: 198000, status: "투숙예정" },
+  { id: "res_003", guest: "WENJIN YAN", roomId: "room_103", channel: "agoda", checkIn: "2026-07-02", checkOut: "2026-07-06", amount: 356000, status: "투숙 중" },
+  { id: "res_004", guest: "이서연", roomId: "room_104", channel: "airbnb", checkIn: "2026-07-05", checkOut: "2026-07-07", amount: 178000, status: "투숙예정" },
+  { id: "res_005", guest: "Michael Ai", roomId: "room_201", channel: "booking", checkIn: "2026-07-03", checkOut: "2026-07-06", amount: 357000, status: "투숙예정" },
+  { id: "res_006", guest: "Sabrina See", roomId: "room_202", channel: "airbnb", checkIn: "2026-07-02", checkOut: "2026-07-04", amount: 238000, status: "투숙 중" },
+  { id: "res_007", guest: "SU GUN DAM", roomId: "room_203", channel: "agoda", checkIn: "2026-07-04", checkOut: "2026-07-08", amount: 476000, status: "투숙예정" },
+  { id: "res_008", guest: "윤준영", roomId: "room_205", channel: "yanolja", checkIn: "2026-07-02", checkOut: "2026-07-03", amount: 89000, status: "투숙 중" },
+  { id: "res_009", guest: "Dmitry Voydakov", roomId: "room_206", channel: "booking", checkIn: "2026-07-03", checkOut: "2026-07-07", amount: 476000, status: "투숙예정" },
+  { id: "res_010", guest: "호이호", roomId: "room_207", channel: "yeogi", checkIn: "2026-07-02", checkOut: "2026-07-05", amount: 327000, status: "투숙 중" },
+  { id: "res_011", guest: "송유나", roomId: "room_301", channel: "naver", checkIn: "2026-07-02", checkOut: "2026-07-04", amount: 278000, status: "투숙 중" },
+  { id: "res_012", guest: "MIZUSE KAWASAKI", roomId: "room_302", channel: "agoda", checkIn: "2026-07-03", checkOut: "2026-07-05", amount: 318000, status: "투숙예정" },
+  { id: "res_013", guest: "RONGYU WANG", roomId: "room_303", channel: "booking", checkIn: "2026-07-05", checkOut: "2026-07-09", amount: 716000, status: "투숙예정" },
+  { id: "res_014", guest: "AKARI MATSUMOTO", roomId: "room_401A", channel: "expedia", checkIn: "2026-07-02", checkOut: "2026-07-07", amount: 245000, status: "투숙 중" },
+  { id: "res_015", guest: "Joon Lee", roomId: "room_401B", channel: "booking", checkIn: "2026-07-04", checkOut: "2026-07-06", amount: 98000, status: "투숙예정" },
+  { id: "res_016", guest: "김채린", roomId: "room_402A", channel: "yanolja", checkIn: "2026-07-03", checkOut: "2026-07-04", amount: 39000, status: "투숙예정" },
+  { id: "res_017", guest: "영준 김", roomId: "room_402B", channel: "yeogi", checkIn: "2026-07-05", checkOut: "2026-07-08", amount: 147000, status: "투숙예정" },
+  { id: "res_018", guest: "Ella Newman", roomId: "room_403A", channel: "airbnb", checkIn: "2026-07-06", checkOut: "2026-07-08", amount: 98000, status: "투숙예정" },
+  { id: "res_019", guest: "Cecilia Delgado", roomId: "room_403B", channel: "booking", checkIn: "2026-07-02", checkOut: "2026-07-05", amount: 137000, status: "투숙 중" },
+  { id: "res_020", guest: "최유진", roomId: "room_105", channel: "naver", checkIn: "2026-07-01", checkOut: "2026-07-02", amount: 69000, status: "체크아웃" },
+  { id: "res_021", guest: "문지호", roomId: "room_106", channel: "yanolja", checkIn: "2026-07-01", checkOut: "2026-07-03", amount: 138000, status: "투숙 중" },
+  { id: "res_022", guest: "정하린", roomId: "room_107", channel: "yeogi", checkIn: "2026-07-02", checkOut: "2026-07-05", amount: 247000, status: "투숙 중" },
+  { id: "res_023", guest: "SEYON PARK", roomId: "room_108", channel: "booking", checkIn: "2026-07-02", checkOut: "2026-07-04", amount: 178000, status: "투숙 중" },
+  { id: "res_024", guest: "홍다은", roomId: "room_208", channel: "airbnb", checkIn: "2026-07-01", checkOut: "2026-07-04", amount: 327000, status: "투숙 중" },
+  { id: "res_025", guest: "Andres Marin", roomId: "room_209", channel: "expedia", checkIn: "2026-07-02", checkOut: "2026-07-06", amount: 476000, status: "투숙 중" },
+  { id: "res_026", guest: "이상일", roomId: "room_210", channel: "yanolja", checkIn: "2026-07-02", checkOut: "2026-07-03", amount: 89000, status: "투숙 중" },
+  { id: "res_027", guest: "박지영", roomId: "room_305", channel: "naver", checkIn: "2026-07-01", checkOut: "2026-07-03", amount: 278000, status: "투숙 중" },
+  { id: "res_028", guest: "김서우", roomId: "room_306", channel: "booking", checkIn: "2026-07-02", checkOut: "2026-07-05", amount: 537000, status: "투숙 중" },
+  { id: "res_029", guest: "LUCY FENG", roomId: "room_404A", channel: "agoda", checkIn: "2026-07-02", checkOut: "2026-07-04", amount: 98000, status: "투숙 중" },
+  { id: "res_030", guest: "한지수", roomId: "room_404B", channel: "yeogi", checkIn: "2026-07-01", checkOut: "2026-07-02", amount: 39000, status: "체크아웃" },
+  { id: "res_031", guest: "박민재", roomId: "room_102", channel: "airbnb", checkIn: "2026-07-01", checkOut: "2026-07-03", amount: 138000, status: "투숙 중" },
+  { id: "res_032", guest: "이지안", roomId: "room_201", channel: "booking", checkIn: "2026-07-01", checkOut: "2026-07-03", amount: 178000, status: "투숙 중" },
+  { id: "res_033", guest: "송민호", roomId: "room_203", channel: "naver", checkIn: "2026-07-01", checkOut: "2026-07-04", amount: 267000, status: "투숙 중" },
+  { id: "res_034", guest: "강수아", roomId: "room_206", channel: "yanolja", checkIn: "2026-07-01", checkOut: "2026-07-03", amount: 178000, status: "투숙 중" },
+  { id: "res_035", guest: "Cahaya Putri", roomId: "room_302", channel: "agoda", checkIn: "2026-07-01", checkOut: "2026-07-03", amount: 278000, status: "투숙 중" },
+  { id: "res_036", guest: "장예린", roomId: "room_303", channel: "airbnb", checkIn: "2026-07-01", checkOut: "2026-07-04", amount: 417000, status: "투숙 중" },
+  { id: "res_037", guest: "rico ka", roomId: "room_401B", channel: "trip", checkIn: "2026-07-01", checkOut: "2026-07-04", amount: 117000, status: "투숙 중" },
+  { id: "res_038", guest: "김채린", roomId: "room_402A", channel: "yanolja", checkIn: "2026-07-01", checkOut: "2026-07-03", amount: 78000, status: "투숙 중" },
+  { id: "res_039", guest: "Shane Sarkar", roomId: "room_403A", channel: "booking", checkIn: "2026-07-01", checkOut: "2026-07-03", amount: 78000, status: "투숙 중" },
+];
+
+const pricingRecommendations = [
+  { id: "rec_001", date: "2026-07-03", roomType: "디럭스", current: 119000, next: 139000, reasons: ["금요일", "점유율 86%"], delta: 140000, status: "승인 대기" },
+  { id: "rec_002", date: "2026-07-04", roomType: "패밀리룸", current: 179000, next: 209000, reasons: ["토요일", "잔여 1실"], delta: 120000, status: "승인 대기" },
+  { id: "rec_003", date: "2026-07-05", roomType: "스탠다드", current: 89000, next: 79000, reasons: ["임박 공실"], delta: -50000, status: "승인 대기" },
+  { id: "rec_004", date: "2026-07-06", roomType: "도미토리", current: 49000, next: 44000, reasons: ["평일", "잔여 6실"], delta: -30000, status: "승인 대기" },
+  { id: "rec_005", date: "2026-07-07", roomType: "디럭스", current: 89000, next: 99000, reasons: ["검색량 증가"], delta: 70000, status: "승인 대기" },
+  { id: "rec_006", date: "2026-07-08", roomType: "스탠다드", current: 69000, next: 62000, reasons: ["낮은 점유율"], delta: -42000, status: "보류" },
+  { id: "rec_007", date: "2026-07-10", roomType: "패밀리룸", current: 179000, next: 219000, reasons: ["주말", "시장가 상승"], delta: 160000, status: "승인 대기" },
+  { id: "rec_008", date: "2026-07-11", roomType: "디럭스", current: 119000, next: 149000, reasons: ["토요일", "높은 점유율"], delta: 210000, status: "승인 대기" },
+];
+
+const rules = [
+  { id: "rule_weekend", name: "주말 할증", condition: "금·토", value: "+20%", enabled: true },
+  { id: "rule_last_minute", name: "임박 공실 할인", condition: "체크인 3일 전", value: "-10%", enabled: true },
+  { id: "rule_high_occupancy", name: "높은 점유율 할증", condition: "점유율 80% 이상", value: "+15%", enabled: true },
+];
+
+const monthlyRevenue = [
+  { label: "1월", value: 24 },
+  { label: "2월", value: 28 },
+  { label: "3월", value: 31 },
+  { label: "4월", value: 34 },
+  { label: "5월", value: 39 },
+  { label: "6월", value: 42 },
+  { label: "7월", value: 48 },
+];
+
+const occupancyTrend = [62, 68, 73, 71, 79, 83, 86];
+
+const content = document.getElementById("content");
+const title = document.getElementById("page-title");
+const toast = document.getElementById("toast");
+const approvalChip = document.getElementById("approval-count-chip");
+
+function formatWon(value) {
+  return `₩${Number(value).toLocaleString("ko-KR")}`;
+}
+
+function parseDate(value) {
+  return new Date(`${value}T00:00:00+09:00`);
+}
+
+function dateKey(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function addDays(date, days) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+function diffDays(start, end) {
+  return Math.round((parseDate(end) - parseDate(start)) / 86400000);
+}
+
+function visibleDays() {
+  return Array.from({ length: 7 }, (_, index) => addDays(state.timelineStart, index));
+}
+
+function getChannel(id) {
+  return channels.find((channel) => channel.id === id) || channels[0];
+}
+
+function getRoom(id) {
+  return rooms.find((room) => room.id === id);
+}
+
+function roomStateClass(status) {
+  if (status === "판매 중지" || status === "점검 중") return "blocked";
+  if (status === "청소 필요") return "cleaning";
+  return "";
+}
+
+function filteredRooms() {
+  return rooms.filter((room) => {
+    const matchesType = state.roomTypeFilter === "전체" || room.type === state.roomTypeFilter;
+    const needle = state.search.trim().toLowerCase();
+    const matchesSearch = !needle || `${room.name} ${room.type} ${room.status}`.toLowerCase().includes(needle);
+    return matchesType && matchesSearch;
+  });
+}
+
+function activeReservationsOn(date) {
+  const key = dateKey(date);
+  return reservations.filter((reservation) => reservation.checkIn <= key && reservation.checkOut > key);
+}
+
+function availableRoomsOn(date) {
+  const activeRoomIds = new Set(activeReservationsOn(date).map((reservation) => reservation.roomId));
+  return rooms.filter((room) => room.status === "판매 가능" && !activeRoomIds.has(room.id)).length;
+}
+
+function calculateKpis() {
+  const todayKey = dateKey(TODAY);
+  const activeToday = activeReservationsOn(TODAY);
+  const checkIns = reservations.filter((reservation) => reservation.checkIn === todayKey).length;
+  const checkOuts = reservations.filter((reservation) => reservation.checkOut === todayKey).length;
+  const todayRevenue = reservations
+    .filter((reservation) => reservation.checkIn <= todayKey && reservation.checkOut > todayKey)
+    .reduce((sum, reservation) => sum + Math.round(reservation.amount / Math.max(1, diffDays(reservation.checkIn, reservation.checkOut))), 0);
+  const occupancy = Math.round((activeToday.length / rooms.length) * 100);
+  const averageDailyRoom = activeToday.length ? Math.round(todayRevenue / activeToday.length) : 0;
+  const pending = pricingRecommendations.filter((item) => item.status === "승인 대기").length;
+
+  return { checkIns, checkOuts, todayRevenue, occupancy, averageDailyRoom, pending };
+}
+
+function setTitle(label) {
+  title.textContent = label;
+}
+
+function showToast(message) {
+  toast.textContent = message;
+  toast.classList.add("show");
+  window.clearTimeout(showToast.timer);
+  showToast.timer = window.setTimeout(() => toast.classList.remove("show"), 2200);
+}
+
+function updateApprovalChip() {
+  approvalChip.textContent = pricingRecommendations.filter((item) => item.status === "승인 대기").length;
+}
+
+function renderKpis() {
+  const kpis = calculateKpis();
+  const cards = [
+    { label: "오늘 체크인", value: `${kpis.checkIns}팀`, sub: "프런트 확인 필요", color: "var(--blue)" },
+    { label: "오늘 체크아웃", value: `${kpis.checkOuts}팀`, sub: "객실 정리 예정", color: "var(--teal)" },
+    { label: "객실 점유율", value: `${kpis.occupancy}%`, sub: `판매 가능 ${availableRoomsOn(TODAY)}실`, color: "var(--green)" },
+    { label: "오늘 예상 매출", value: formatWon(kpis.todayRevenue), sub: "더미 데이터 기준", color: "var(--amber)" },
+    { label: "가격 승인 대기", value: `${kpis.pending}건`, sub: "예상 증가 ₩860,000", color: "var(--red)" },
+  ];
+
+  return `
+    <div class="kpi-grid">
+      ${cards
+        .map(
+          (card) => `
+            <article class="kpi-card" style="--accent: ${card.color}">
+              <div class="kpi-label">${card.label}</div>
+              <div class="kpi-value">${card.value}</div>
+              <div class="kpi-sub">${card.sub}</div>
+            </article>
+          `,
+        )
+        .join("")}
+    </div>
+  `;
+}
+
+function renderActionList() {
+  const kpis = calculateKpis();
+  const items = [
+    {
+      icon: "₩",
+      title: `가격 추천 ${kpis.pending}건 승인 대기`,
+      meta: "추천 총 예상 +₩860,000",
+      accent: "var(--red)",
+      soft: "var(--red-soft)",
+      action: "가격 보기",
+      view: "pricing",
+    },
+    {
+      icon: "↳",
+      title: `오늘 체크인 ${kpis.checkIns}팀`,
+      meta: "예약자명과 객실 배정을 확인하세요",
+      accent: "var(--blue)",
+      soft: "var(--blue-soft)",
+      action: "예약 보기",
+      view: "reservations",
+    },
+    {
+      icon: "⇄",
+      title: "익스피디아 동기화 점검 필요",
+      meta: "마지막 확인 18분 전",
+      accent: "var(--amber)",
+      soft: "var(--amber-soft)",
+      action: "채널 보기",
+      view: "channels",
+    },
+  ];
+
+  return `
+    <div class="alert-list">
+      ${items
+        .map(
+          (item) => `
+            <article class="action-item">
+              <span class="action-icon" style="--accent: ${item.accent}; --accent-soft: ${item.soft}">${item.icon}</span>
+              <div>
+                <div class="action-title">${item.title}</div>
+                <div class="action-meta">${item.meta}</div>
+              </div>
+              <button class="ghost-button" data-view-jump="${item.view}" type="button">${item.action}</button>
+            </article>
+          `,
+        )
+        .join("")}
+    </div>
+  `;
+}
+
+function renderTimelineControls() {
+  const start = state.timelineStart;
+  const end = addDays(start, 6);
+  return `
+    <div class="toolbar">
+      <button class="ghost-button" id="prev-week" type="button" aria-label="이전 기간">‹</button>
+      <button class="ghost-button" id="today-week" type="button">오늘</button>
+      <button class="ghost-button" id="next-week" type="button" aria-label="다음 기간">›</button>
+      <strong>${start.getMonth() + 1}/${start.getDate()} ~ ${end.getMonth() + 1}/${end.getDate()}</strong>
+      <div class="segmented" aria-label="보기 방식">
+        <button class="active" type="button">일별</button>
+        <button type="button">시간별</button>
+      </div>
+      <select class="select-control" id="room-type-filter" aria-label="객실 타입 필터">
+        ${["전체", ...roomTypes].map((type) => `<option value="${type}" ${state.roomTypeFilter === type ? "selected" : ""}>${type}</option>`).join("")}
+      </select>
+      <input class="search-control" id="room-search" value="${state.search}" placeholder="객실 검색" />
+    </div>
+  `;
+}
+
+function renderTimeline(limitRows = false) {
+  const days = visibleDays();
+  const todayIndex = days.findIndex((day) => dateKey(day) === dateKey(TODAY));
+  const displayRooms = filteredRooms();
+  const rows = limitRows ? displayRooms.slice(0, 12) : displayRooms;
+  const grouped = roomTypes
+    .map((type) => ({
+      type,
+      rooms: rows.filter((room) => room.type === type),
+    }))
+    .filter((group) => group.rooms.length > 0);
+
+  const header = `
+    <div class="timeline-header">
+      <div class="corner-cell">객실</div>
+      ${days
+        .map((day) => {
+          const isToday = dateKey(day) === dateKey(TODAY);
+          return `
+            <div class="date-cell ${isToday ? "today" : ""}">
+              <span>${day.getMonth() + 1}/${day.getDate()}</span>
+              <span class="date-weekday">${["일", "월", "화", "수", "목", "금", "토"][day.getDay()]}</span>
+            </div>
+          `;
+        })
+        .join("")}
+    </div>
+  `;
+
+  const body = grouped
+    .map((group) => {
+      const groupHeader = `<div class="room-group"><span>− ${group.type}</span></div>`;
+      const groupRows = group.rooms
+        .map((room) => {
+          const bars = reservations
+            .filter((reservation) => reservation.roomId === room.id)
+            .map((reservation) => {
+              const startOffset = Math.max(0, diffDays(dateKey(state.timelineStart), reservation.checkIn));
+              const endOffset = Math.min(7, diffDays(dateKey(state.timelineStart), reservation.checkOut));
+              if (endOffset <= 0 || startOffset >= 7) return "";
+              const channel = getChannel(reservation.channel);
+              const outline = reservation.status === "투숙예정" ? "outline" : "";
+              return `
+                <div
+                  class="reservation-bar ${outline}"
+                  style="grid-column: ${startOffset + 2} / ${endOffset + 2}; --bar-bg: ${channel.color}; --bar-border: ${channel.color};"
+                  title="${reservation.guest} · ${channel.name} · ${formatWon(reservation.amount)}"
+                >
+                  ${reservation.guest}
+                </div>
+              `;
+            })
+            .join("");
+
+          return `
+            <div class="timeline-row">
+              <div class="room-cell">
+                <span class="room-number">${room.name}</span>
+                <span>${room.type}</span>
+                <span class="room-state ${roomStateClass(room.status)}">${room.status}</span>
+              </div>
+              ${days.map(() => `<div class="day-cell"></div>`).join("")}
+              ${bars}
+            </div>
+          `;
+        })
+        .join("");
+      return `${groupHeader}${groupRows}`;
+    })
+    .join("");
+
+  const footer = `
+    <div class="timeline-footer">
+      <div class="footer-cell">판매 가능 객실 수</div>
+      ${days.map((day) => `<div class="footer-cell"><span class="availability-number">${availableRoomsOn(day)}</span></div>`).join("")}
+    </div>
+  `;
+
+  return `
+    <div class="timeline-wrap">
+      <div class="timeline" style="--today-index: ${todayIndex >= 0 ? todayIndex : -10}">
+        ${todayIndex >= 0 ? `<div class="today-line"></div>` : ""}
+        ${header}
+        ${body}
+        ${footer}
+      </div>
+    </div>
+  `;
+}
+
+function renderTodayView() {
+  setTitle("오늘의 운영");
+  content.innerHTML = `
+    <div class="view-stack">
+      ${renderKpis()}
+      <div class="two-column">
+        <section class="section-band">
+          <div class="section-head">
+            <div>
+              <h2>오늘 바로 볼 것</h2>
+              <p>승인, 체크인, 동기화만 먼저 확인하면 됩니다.</p>
+            </div>
+          </div>
+          ${renderActionList()}
+        </section>
+        <section class="section-band">
+          <div class="section-head">
+            <div>
+              <h2>예약채널 상태</h2>
+              <p>문제가 있는 채널만 강조합니다.</p>
+            </div>
+          </div>
+          ${renderChannelSummaryTable()}
+        </section>
+      </div>
+      <section class="section-band">
+        <div class="section-head">
+          <div>
+            <h2>객실·예약 타임라인</h2>
+              <p>7일간 객실 예약 현황</p>
+          </div>
+          ${renderTimelineControls()}
+        </div>
+        ${renderTimeline(true)}
+      </section>
+    </div>
+  `;
+  bindCommonControls();
+}
+
+function renderReservationsView() {
+  setTitle("객실·예약 관리");
+  content.innerHTML = `
+    <div class="view-stack">
+      ${renderKpis()}
+      <section class="section-band">
+        <div class="section-head">
+          <div>
+            <h2>객실 재고형 예약판</h2>
+            <p>객실 32개 기준 7일 현황</p>
+          </div>
+          ${renderTimelineControls()}
+        </div>
+        ${renderTimeline(false)}
+      </section>
+      <section class="section-band">
+        <div class="section-head">
+          <div>
+            <h2>오늘 예약 목록</h2>
+            <p>체크인과 투숙 중 예약만 모았습니다.</p>
+          </div>
+        </div>
+        ${renderReservationTable()}
+      </section>
+    </div>
+  `;
+  bindCommonControls();
+}
+
+function renderReservationTable() {
+  const todayKey = dateKey(TODAY);
+  const rows = reservations.filter((reservation) => reservation.checkIn <= todayKey && reservation.checkOut >= todayKey);
+  return `
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr>
+            <th>예약자</th>
+            <th>객실</th>
+            <th>예약채널</th>
+            <th>일정</th>
+            <th class="text-right">금액</th>
+            <th>상태</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows
+            .map((reservation) => {
+              const room = getRoom(reservation.roomId);
+              const channel = getChannel(reservation.channel);
+              return `
+                <tr>
+                  <td><strong>${reservation.guest}</strong></td>
+                  <td>${room.name} · ${room.type}</td>
+                  <td>${channel.name}</td>
+                  <td>${reservation.checkIn} ~ ${reservation.checkOut}</td>
+                  <td class="text-right">${formatWon(reservation.amount)}</td>
+                  <td><span class="status-badge ${reservation.status === "투숙 중" ? "approved" : "pending"}">${reservation.status}</span></td>
+                </tr>
+              `;
+            })
+            .join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderChannelSummaryTable() {
+  return `
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr>
+            <th>채널</th>
+            <th>상태</th>
+            <th class="text-right">오늘 예약</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${channels
+            .slice(0, 5)
+            .map(
+              (channel) => `
+                <tr>
+                  <td><strong>${channel.name}</strong></td>
+                  <td><span class="status-badge ${channel.status === "연결됨" ? "approved" : channel.status === "점검 필요" ? "pending" : "hold"}">${channel.status}</span></td>
+                  <td class="text-right">${Math.max(1, Math.round(channel.reservations / 4))}건</td>
+                </tr>
+              `,
+            )
+            .join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderChannelsView() {
+  setTitle("예약채널 관리");
+  content.innerHTML = `
+    <div class="view-stack">
+      <section class="section-band">
+        <div class="section-head">
+          <div>
+            <h2>연결된 예약채널</h2>
+            <p>연결됨 6개 · 점검 필요 1개 · 연결 대기 1개</p>
+          </div>
+          <button class="primary-button" id="sync-all-channels" type="button">모든 채널 동기화</button>
+        </div>
+        <div class="channel-grid">
+          ${channels
+            .map(
+              (channel) => `
+                <article class="channel-card">
+                  <div class="channel-top">
+                    <div>
+                      <div class="channel-name">${channel.name}</div>
+                      <div class="channel-meta">가격 배율 ${channel.multiplier.toFixed(2)}배 · 수수료 ${channel.commission}%</div>
+                    </div>
+                    <span class="status-badge ${channel.status === "연결됨" ? "approved" : channel.status === "점검 필요" ? "pending" : "hold"}">${channel.status}</span>
+                  </div>
+                  <div class="channel-stats">
+                    <div class="mini-stat">
+                      <span>이번 달 매출</span>
+                      <strong>${formatWon(channel.revenue)}</strong>
+                    </div>
+                    <div class="mini-stat">
+                      <span>예약 수</span>
+                      <strong>${channel.reservations}건</strong>
+                    </div>
+                  </div>
+                  <button class="ghost-button channel-sync" data-channel="${channel.name}" type="button">동기화 확인</button>
+                </article>
+              `,
+            )
+            .join("")}
+        </div>
+      </section>
+      <section class="section-band">
+        <div class="section-head">
+          <div>
+            <h2>채널별 매출</h2>
+            <p>어느 예약채널이 매출을 만드는지 빠르게 봅니다.</p>
+          </div>
+        </div>
+        ${renderChannelRevenueChart()}
+      </section>
+    </div>
+  `;
+  bindChannelControls();
+}
+
+function renderChannelRevenueChart() {
+  const max = Math.max(...channels.map((channel) => channel.revenue));
+  return `
+    <div class="chart-card">
+      <div class="bar-chart">
+        ${channels
+          .map(
+            (channel) => `
+              <div class="bar-item">
+                <div class="bar-fill" style="height: ${Math.round((channel.revenue / max) * 170)}px; background: linear-gradient(180deg, ${channel.color}, #8dc7d4)"></div>
+                <div class="bar-label">${channel.name.replace("예약", "")}</div>
+              </div>
+            `,
+          )
+          .join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderPricingView() {
+  setTitle("가격 최적화");
+  const pendingCount = pricingRecommendations.filter((item) => item.status === "승인 대기").length;
+  const holdCount = pricingRecommendations.filter((item) => item.status === "보류").length;
+  content.innerHTML = `
+    <div class="view-stack">
+      <section class="section-band">
+        <div class="section-head">
+          <div>
+            <h2>가격 추천 승인</h2>
+            <p>승인 대기 ${pendingCount}건 · 보류 ${holdCount}건</p>
+          </div>
+          <div class="toolbar">
+            <button class="ghost-button" id="approve-all-visible" type="button">승인 대기 모두 승인</button>
+            <button class="quiet-button" id="toggle-alert" type="button">
+              자동 변경 전 알림 ${state.alertBeforeAutoChange ? "켜짐" : "꺼짐"}
+            </button>
+          </div>
+        </div>
+        <div class="pricing-grid">
+          ${pricingRecommendations.map(renderPriceCard).join("")}
+        </div>
+      </section>
+      <section class="section-band">
+        <div class="section-head">
+          <div>
+            <h2>가격 규칙</h2>
+            <p>사용 중 3개</p>
+          </div>
+        </div>
+        <div class="rule-grid">
+          ${rules
+            .map(
+              (rule) => `
+                <article class="rule-card">
+                  <div class="toggle-row">
+                    <div>
+                      <strong>${rule.name}</strong>
+                      <div class="channel-meta">${rule.condition} · ${rule.value}</div>
+                    </div>
+                    <button class="switch ${rule.enabled ? "on" : ""}" data-rule="${rule.id}" type="button" aria-label="${rule.name}"></button>
+                  </div>
+                </article>
+              `,
+            )
+            .join("")}
+        </div>
+      </section>
+    </div>
+  `;
+  bindPricingControls();
+}
+
+function renderPriceCard(item) {
+  const statusClass = item.status === "승인 완료" ? "approved" : item.status === "보류" ? "hold" : "pending";
+  return `
+    <article class="price-card">
+      <div class="price-card-head">
+        <div>
+          <div class="price-date">${item.date}</div>
+          <div class="price-room">${item.roomType}</div>
+        </div>
+        <span class="status-badge ${statusClass}">${item.status}</span>
+      </div>
+      <div class="price-compare">
+        <div>
+          <span class="channel-meta">현재</span>
+          <strong>${formatWon(item.current)}</strong>
+        </div>
+        <span class="arrow-token">→</span>
+        <div>
+          <span class="channel-meta">추천</span>
+          <strong>${formatWon(item.next)}</strong>
+        </div>
+      </div>
+      <div class="reason-list">
+        ${item.reasons.map((reason) => `<span class="reason-chip">${reason}</span>`).join("")}
+        <span class="reason-chip">${item.delta >= 0 ? "+" : ""}${formatWon(item.delta)} 예상</span>
+      </div>
+      <div class="card-actions">
+        <button class="primary-button approve-price" data-id="${item.id}" type="button" ${item.status === "승인 완료" ? "disabled" : ""}>승인</button>
+        <button class="ghost-button hold-price" data-id="${item.id}" type="button">보류</button>
+      </div>
+    </article>
+  `;
+}
+
+function renderReportsView() {
+  setTitle("수익 분석");
+  content.innerHTML = `
+    <div class="view-stack">
+      <div class="kpi-grid">
+        <article class="kpi-card" style="--accent: var(--green)">
+          <div class="kpi-label">이번 달 예상 매출</div>
+          <div class="kpi-value">${formatWon(48200000)}</div>
+          <div class="kpi-sub">전월 대비 +14%</div>
+        </article>
+        <article class="kpi-card" style="--accent: var(--blue)">
+          <div class="kpi-label">평균 객실단가</div>
+          <div class="kpi-value">${formatWon(96300)}</div>
+          <div class="kpi-sub">가격 추천 반영 전</div>
+        </article>
+        <article class="kpi-card" style="--accent: var(--amber)">
+          <div class="kpi-label">예약채널 매출 1위</div>
+          <div class="kpi-value">부킹닷컴</div>
+          <div class="kpi-sub">이번 달 24건</div>
+        </article>
+        <article class="kpi-card" style="--accent: var(--teal)">
+          <div class="kpi-label">가격 추천 효과</div>
+          <div class="kpi-value">${formatWon(860000)}</div>
+          <div class="kpi-sub">승인 시 예상 증가분</div>
+        </article>
+        <article class="kpi-card" style="--accent: var(--red)">
+          <div class="kpi-label">점검 필요 날짜</div>
+          <div class="kpi-value">4일</div>
+          <div class="kpi-sub">공실이 많은 평일</div>
+        </article>
+      </div>
+      <div class="two-column">
+        <section class="chart-card">
+          <div class="section-head">
+            <div>
+              <h2>월별 매출</h2>
+              <p>단위: 백만원</p>
+            </div>
+          </div>
+          ${renderMonthlyRevenueChart()}
+        </section>
+        <section class="chart-card">
+          <div class="section-head">
+            <div>
+              <h2>객실 점유율</h2>
+              <p>최근 7개월</p>
+            </div>
+          </div>
+          ${renderOccupancyLineChart()}
+        </section>
+      </div>
+      <section class="section-band">
+        <div class="section-head">
+          <div>
+            <h2>객실 타입별 매출</h2>
+            <p>가격 최적화 우선순위를 정합니다.</p>
+          </div>
+        </div>
+        ${renderRoomTypeTable()}
+      </section>
+    </div>
+  `;
+}
+
+function renderMonthlyRevenueChart() {
+  const max = Math.max(...monthlyRevenue.map((item) => item.value));
+  return `
+    <div class="bar-chart">
+      ${monthlyRevenue
+        .map(
+          (item) => `
+            <div class="bar-item">
+              <div class="bar-fill" style="height: ${Math.round((item.value / max) * 170)}px"></div>
+              <div class="bar-label">${item.label}</div>
+            </div>
+          `,
+        )
+        .join("")}
+    </div>
+  `;
+}
+
+function renderOccupancyLineChart() {
+  const width = 420;
+  const height = 190;
+  const points = occupancyTrend.map((value, index) => ({
+    x: (index / (occupancyTrend.length - 1)) * (width - 20) + 10,
+    y: height - (value / 100) * (height - 20) - 10,
+    value,
+  }));
+
+  const segments = points.slice(0, -1).map((point, index) => {
+    const next = points[index + 1];
+    const length = Math.hypot(next.x - point.x, next.y - point.y);
+    const angle = Math.atan2(next.y - point.y, next.x - point.x) * (180 / Math.PI);
+    return `<span class="line-segment" style="left:${point.x}px; top:${point.y}px; width:${length}px; transform: rotate(${angle}deg)"></span>`;
+  });
+
+  return `
+    <div class="line-chart">
+      ${segments.join("")}
+      ${points.map((point) => `<span class="line-point" style="left:${point.x - 5}px; top:${point.y - 5}px" title="${point.value}%"></span>`).join("")}
+    </div>
+  `;
+}
+
+function renderRoomTypeTable() {
+  const rows = [
+    { type: "스탠다드", rooms: 5, revenue: 6320000, occupancy: 82, action: "임박 할인 점검" },
+    { type: "디럭스", rooms: 7, revenue: 12860000, occupancy: 88, action: "주말 가격 인상" },
+    { type: "패밀리룸", rooms: 4, revenue: 9340000, occupancy: 92, action: "잔여 객실 보존" },
+    { type: "도미토리", rooms: 6, revenue: 4210000, occupancy: 71, action: "평일 할인 적용" },
+  ];
+
+  return `
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr>
+            <th>객실 타입</th>
+            <th class="text-right">객실 수</th>
+            <th class="text-right">이번 달 매출</th>
+            <th class="text-right">점유율</th>
+            <th>추천 운영</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows
+            .map(
+              (row) => `
+                <tr>
+                  <td><strong>${row.type}</strong></td>
+                  <td class="text-right">${row.rooms}실</td>
+                  <td class="text-right">${formatWon(row.revenue)}</td>
+                  <td class="text-right">${row.occupancy}%</td>
+                  <td>${row.action}</td>
+                </tr>
+              `,
+            )
+            .join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function bindCommonControls() {
+  document.getElementById("prev-week")?.addEventListener("click", () => {
+    state.timelineStart = addDays(state.timelineStart, -7);
+    render();
+  });
+  document.getElementById("next-week")?.addEventListener("click", () => {
+    state.timelineStart = addDays(state.timelineStart, 7);
+    render();
+  });
+  document.getElementById("today-week")?.addEventListener("click", () => {
+    state.timelineStart = new Date("2026-07-02T00:00:00+09:00");
+    render();
+  });
+  document.getElementById("room-type-filter")?.addEventListener("change", (event) => {
+    state.roomTypeFilter = event.target.value;
+    render();
+  });
+  document.getElementById("room-search")?.addEventListener("input", (event) => {
+    state.search = event.target.value;
+    render();
+  });
+}
+
+function bindPricingControls() {
+  document.querySelectorAll(".approve-price").forEach((button) => {
+    button.addEventListener("click", () => {
+      const item = pricingRecommendations.find((recommendation) => recommendation.id === button.dataset.id);
+      if (!item) return;
+      item.status = "승인 완료";
+      updateApprovalChip();
+      showToast(`${item.roomType} ${item.date} 추천 가격을 승인했습니다.`);
+      renderPricingView();
+    });
+  });
+
+  document.querySelectorAll(".hold-price").forEach((button) => {
+    button.addEventListener("click", () => {
+      const item = pricingRecommendations.find((recommendation) => recommendation.id === button.dataset.id);
+      if (!item) return;
+      item.status = "보류";
+      updateApprovalChip();
+      showToast(`${item.roomType} ${item.date} 추천을 보류했습니다.`);
+      renderPricingView();
+    });
+  });
+
+  document.getElementById("approve-all-visible")?.addEventListener("click", () => {
+    pricingRecommendations.forEach((item) => {
+      if (item.status === "승인 대기") item.status = "승인 완료";
+    });
+    updateApprovalChip();
+    showToast("승인 대기 가격을 모두 승인했습니다.");
+    renderPricingView();
+  });
+
+  document.getElementById("toggle-alert")?.addEventListener("click", () => {
+    state.alertBeforeAutoChange = !state.alertBeforeAutoChange;
+    showToast(`자동 변경 전 알림을 ${state.alertBeforeAutoChange ? "켰습니다" : "껐습니다"}.`);
+    renderPricingView();
+  });
+
+  document.querySelectorAll(".switch").forEach((button) => {
+    button.addEventListener("click", () => {
+      const rule = rules.find((item) => item.id === button.dataset.rule);
+      if (!rule) return;
+      rule.enabled = !rule.enabled;
+      showToast(`${rule.name} 규칙을 ${rule.enabled ? "켰습니다" : "껐습니다"}.`);
+      renderPricingView();
+    });
+  });
+}
+
+function bindChannelControls() {
+  document.querySelectorAll(".channel-sync").forEach((button) => {
+    button.addEventListener("click", () => {
+      showToast(`${button.dataset.channel} 동기화 상태를 확인했습니다.`);
+    });
+  });
+  document.getElementById("sync-all-channels")?.addEventListener("click", () => {
+    showToast("모든 예약채널 더미 동기화를 완료했습니다.");
+  });
+}
+
+function bindShellControls() {
+  document.querySelectorAll("[data-view]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.view = button.dataset.view;
+      render();
+    });
+  });
+
+  document.body.addEventListener("click", (event) => {
+    const jump = event.target.closest("[data-view-jump]");
+    if (!jump) return;
+    state.view = jump.dataset.viewJump;
+    render();
+  });
+
+  document.getElementById("sync-button")?.addEventListener("click", () => {
+    showToast("예약채널 더미 동기화를 완료했습니다.");
+  });
+}
+
+function syncNavState() {
+  document.querySelectorAll("[data-view]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.view === state.view);
+  });
+}
+
+function render() {
+  syncNavState();
+  updateApprovalChip();
+
+  if (state.view === "reservations") {
+    renderReservationsView();
+    return;
+  }
+  if (state.view === "channels") {
+    renderChannelsView();
+    return;
+  }
+  if (state.view === "pricing") {
+    renderPricingView();
+    return;
+  }
+  if (state.view === "reports") {
+    renderReportsView();
+    return;
+  }
+  renderTodayView();
+}
+
+bindShellControls();
+render();
