@@ -136,6 +136,11 @@ function formatWon(value) {
   return `₩${Number(value).toLocaleString("ko-KR")}`;
 }
 
+function formatSignedWon(value) {
+  const sign = value > 0 ? "+" : value < 0 ? "-" : "";
+  return `${sign}${formatWon(Math.abs(value))}`;
+}
+
 function parseDate(value) {
   return new Date(`${value}T00:00:00+09:00`);
 }
@@ -209,6 +214,32 @@ function calculateKpis() {
   return { checkIns, checkOuts, todayRevenue, occupancy, averageDailyRoom, pending };
 }
 
+function getTodayArrivals() {
+  const todayKey = dateKey(TODAY);
+  return reservations.filter((reservation) => reservation.checkIn === todayKey);
+}
+
+function getTodayDepartures() {
+  const todayKey = dateKey(TODAY);
+  return reservations.filter((reservation) => reservation.checkOut === todayKey);
+}
+
+function getPendingPricingRecommendations() {
+  return pricingRecommendations.filter((item) => item.status === "승인 대기");
+}
+
+function formatShortDate(value) {
+  return value.slice(5).replace("-", "/");
+}
+
+function formatStayRange(reservation) {
+  return `${formatShortDate(reservation.checkIn)} ~ ${formatShortDate(reservation.checkOut)}`;
+}
+
+function renderChannelPill(channel) {
+  return `<span class="channel-pill" style="--channel-color: ${channel.color}">${channel.name}</span>`;
+}
+
 function setTitle(label) {
   title.textContent = label;
 }
@@ -251,50 +282,260 @@ function renderKpis() {
   `;
 }
 
-function renderActionList() {
+function renderTodayMetricStrip() {
   const kpis = calculateKpis();
-  const items = [
+  const channelIssues = channels.filter((channel) => channel.status !== "연결됨").length;
+  const cleaningRooms = rooms.filter((room) => room.status === "청소 필요").length;
+  const metrics = [
+    { label: "점유율", value: `${kpis.occupancy}%`, note: `판매 가능 ${availableRoomsOn(TODAY)}실` },
+    { label: "오늘 매출", value: formatWon(kpis.todayRevenue), note: `평균 ${formatWon(kpis.averageDailyRoom)}` },
+    { label: "청소 필요", value: `${cleaningRooms}실`, note: "퇴실 후 재확인" },
+    { label: "채널 문제", value: `${channelIssues}개`, note: "동기화 확인" },
+  ];
+
+  return `
+    <div class="metric-strip">
+      ${metrics
+        .map(
+          (metric) => `
+            <div class="metric-item">
+              <span>${metric.label}</span>
+              <strong>${metric.value}</strong>
+              <small>${metric.note}</small>
+            </div>
+          `,
+        )
+        .join("")}
+    </div>
+  `;
+}
+
+function renderMiniReservationRows(rows, emptyText) {
+  if (!rows.length) {
+    return `<div class="empty-row">${emptyText}</div>`;
+  }
+
+  return `
+    <div class="mini-reservation-list">
+      ${rows
+        .slice(0, 4)
+        .map((reservation) => {
+          const room = getRoom(reservation.roomId);
+          const channel = getChannel(reservation.channel);
+          return `
+            <div class="mini-reservation-row">
+              <div>
+                <strong>${reservation.guest}</strong>
+                <span>${room.name} · ${room.type}</span>
+              </div>
+              ${renderChannelPill(channel)}
+            </div>
+          `;
+        })
+        .join("")}
+    </div>
+  `;
+}
+
+function renderPricingPreviewRows(rows) {
+  return `
+    <div class="mini-reservation-list">
+      ${rows
+        .slice(0, 3)
+        .map(
+          (item) => `
+            <div class="mini-reservation-row">
+              <div>
+                <strong>${item.roomType}</strong>
+                <span>${formatShortDate(item.date)} · ${item.reasons.join(", ")}</span>
+              </div>
+              <strong class="${item.delta >= 0 ? "delta-up" : "delta-down"}">${formatSignedWon(item.delta)}</strong>
+            </div>
+          `,
+        )
+        .join("")}
+    </div>
+  `;
+}
+
+function renderChannelIssueRows(rows) {
+  return `
+    <div class="mini-reservation-list">
+      ${rows
+        .map(
+          (channel) => `
+            <div class="mini-reservation-row">
+              <div>
+                <strong>${channel.name}</strong>
+                <span>${channel.status === "점검 필요" ? "가격·재고 마지막 확인 18분 전" : "채널 매핑 완료 전"}</span>
+              </div>
+              <span class="status-badge ${channel.status === "점검 필요" ? "pending" : "hold"}">${channel.status}</span>
+            </div>
+          `,
+        )
+        .join("")}
+    </div>
+  `;
+}
+
+function renderTodayWorkflow() {
+  const arrivals = getTodayArrivals();
+  const departures = getTodayDepartures();
+  const pendingPrices = getPendingPricingRecommendations();
+  const channelIssues = channels.filter((channel) => channel.status !== "연결됨");
+  const expectedDelta = pendingPrices.reduce((sum, item) => sum + item.delta, 0);
+  const cards = [
     {
-      icon: "₩",
-      title: `가격 추천 ${kpis.pending}건 승인 대기`,
-      meta: "추천 총 예상 +₩860,000",
-      accent: "var(--red)",
-      soft: "var(--red-soft)",
-      action: "가격 보기",
-      view: "pricing",
-    },
-    {
-      icon: "↳",
-      title: `오늘 체크인 ${kpis.checkIns}팀`,
-      meta: "예약자명과 객실 배정을 확인하세요",
-      accent: "var(--blue)",
-      soft: "var(--blue-soft)",
-      action: "예약 보기",
+      step: "1",
+      title: "입실 준비",
+      count: `${arrivals.length}팀`,
+      note: "객실, 예약자명, OTA 확인",
+      action: "입실 목록",
       view: "reservations",
+      tone: "blue",
+      body: renderMiniReservationRows(arrivals, "오늘 입실 예약이 없습니다."),
     },
     {
-      icon: "⇄",
-      title: "익스피디아 동기화 점검 필요",
-      meta: "마지막 확인 18분 전",
-      accent: "var(--amber)",
-      soft: "var(--amber-soft)",
-      action: "채널 보기",
+      step: "2",
+      title: "퇴실·청소",
+      count: `${departures.length}팀`,
+      note: `청소 필요 ${rooms.filter((room) => room.status === "청소 필요").length}실`,
+      action: "퇴실 목록",
+      view: "reservations",
+      tone: "teal",
+      body: renderMiniReservationRows(departures, "오늘 퇴실 예약이 없습니다."),
+    },
+    {
+      step: "3",
+      title: "가격 승인",
+      count: `${pendingPrices.length}건`,
+      note: `승인 시 예상 ${formatSignedWon(expectedDelta)}`,
+      action: "승인하기",
+      view: "pricing",
+      tone: "red",
+      body: renderPricingPreviewRows(pendingPrices),
+    },
+    {
+      step: "4",
+      title: "채널 점검",
+      count: `${channelIssues.length}개`,
+      note: "문제 채널만 확인",
+      action: "동기화",
       view: "channels",
+      tone: "amber",
+      body: renderChannelIssueRows(channelIssues),
     },
   ];
 
   return `
-    <div class="alert-list">
+    <section class="section-band">
+      <div class="ops-workflow">
+        ${cards
+          .map(
+            (card) => `
+              <article class="ops-card ${card.tone}">
+                <div class="ops-card-head">
+                  <span class="ops-step">${card.step}</span>
+                  <div>
+                    <h3>${card.title}</h3>
+                    <p>${card.note}</p>
+                  </div>
+                  <strong>${card.count}</strong>
+                </div>
+                <div class="ops-card-body">${card.body}</div>
+                <button class="ghost-button" data-view-jump="${card.view}" type="button">${card.action}</button>
+              </article>
+            `,
+          )
+          .join("")}
+      </div>
+    </section>
+  `;
+}
+
+function renderTodayGuestBoard() {
+  const arrivals = getTodayArrivals();
+  const departures = getTodayDepartures();
+  return `
+    <div class="guest-board">
+      <div class="movement-column">
+        <div class="movement-title">
+          <span>도착</span>
+          <strong>${arrivals.length}팀</strong>
+        </div>
+        ${renderMovementRows(arrivals, "arrival")}
+      </div>
+      <div class="movement-column">
+        <div class="movement-title">
+          <span>출발</span>
+          <strong>${departures.length}팀</strong>
+        </div>
+        ${renderMovementRows(departures, "departure")}
+      </div>
+    </div>
+  `;
+}
+
+function renderMovementRows(rows, type) {
+  if (!rows.length) return `<div class="empty-row">오늘 ${type === "arrival" ? "도착" : "출발"} 예약이 없습니다.</div>`;
+  return rows
+    .slice(0, 7)
+    .map((reservation) => {
+      const room = getRoom(reservation.roomId);
+      const channel = getChannel(reservation.channel);
+      return `
+        <div class="movement-row">
+          <div class="movement-main">
+            <strong>${reservation.guest}</strong>
+            <span>${room.name} · ${room.type} · ${formatStayRange(reservation)}</span>
+          </div>
+          ${renderChannelPill(channel)}
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function renderTodayFocusList() {
+  const departures = getTodayDepartures();
+  const pendingPrices = getPendingPricingRecommendations();
+  const channelIssues = channels.filter((channel) => channel.status !== "연결됨");
+  const items = [
+    {
+      label: "가격",
+      title: `승인 대기 ${pendingPrices.length}건`,
+      detail: "오늘 승인하면 전 채널에 반영 예정",
+      view: "pricing",
+      status: "확인",
+    },
+    {
+      label: "채널",
+      title: `${channelIssues.map((channel) => channel.name).join(", ")} 점검`,
+      detail: "가격·재고 동기화 상태 확인",
+      view: "channels",
+      status: "주의",
+    },
+    {
+      label: "객실",
+      title: departures.length ? `${getRoom(departures[0].roomId).name} 퇴실 후 청소` : "퇴실 청소 없음",
+      detail: departures.length ? `${departures[0].guest} · ${formatShortDate(departures[0].checkOut)} 출발` : "오늘은 재판매 대기 객실만 확인",
+      view: "reservations",
+      status: departures.length ? "작업" : "정상",
+    },
+  ];
+
+  return `
+    <div class="focus-list">
       ${items
         .map(
           (item) => `
-            <article class="action-item">
-              <span class="action-icon" style="--accent: ${item.accent}; --accent-soft: ${item.soft}">${item.icon}</span>
+            <article class="focus-item">
+              <span class="focus-label">${item.label}</span>
               <div>
-                <div class="action-title">${item.title}</div>
-                <div class="action-meta">${item.meta}</div>
+                <strong>${item.title}</strong>
+                <p>${item.detail}</p>
               </div>
-              <button class="ghost-button" data-view-jump="${item.view}" type="button">${item.action}</button>
+              <button class="quiet-button" data-view-jump="${item.view}" type="button">${item.status}</button>
             </article>
           `,
         )
@@ -416,27 +657,36 @@ function renderTimeline(limitRows = false) {
 
 function renderTodayView() {
   setTitle("오늘의 운영");
+  const kpis = calculateKpis();
   content.innerHTML = `
     <div class="view-stack">
-      ${renderKpis()}
-      <div class="two-column">
+      <section class="ops-overview">
+        <div class="ops-summary">
+          <span class="eyebrow">2026년 7월 2일 목요일 · 오전 9시 기준</span>
+          <h2>입실 ${kpis.checkIns}팀, 퇴실 ${kpis.checkOuts}팀, 가격 승인 ${kpis.pending}건</h2>
+          <p>입실 준비 → 퇴실·청소 → 가격 승인 → 채널 점검</p>
+        </div>
+        ${renderTodayMetricStrip()}
+      </section>
+      ${renderTodayWorkflow()}
+      <div class="two-column ops-columns">
         <section class="section-band">
           <div class="section-head">
             <div>
-              <h2>오늘 바로 볼 것</h2>
-              <p>승인, 체크인, 동기화만 먼저 확인하면 됩니다.</p>
+              <h2>오늘 이동 손님</h2>
+              <p>도착과 출발을 OTA까지 같이 확인합니다.</p>
             </div>
           </div>
-          ${renderActionList()}
+          ${renderTodayGuestBoard()}
         </section>
         <section class="section-band">
           <div class="section-head">
             <div>
-              <h2>예약채널 상태</h2>
-              <p>문제가 있는 채널만 강조합니다.</p>
+              <h2>운영 알림</h2>
+              <p>관리자가 지금 처리할 항목만 남깁니다.</p>
             </div>
           </div>
-          ${renderChannelSummaryTable()}
+          ${renderTodayFocusList()}
         </section>
       </div>
       <section class="section-band">
@@ -515,36 +765,6 @@ function renderReservationTable() {
                 </tr>
               `;
             })
-            .join("")}
-        </tbody>
-      </table>
-    </div>
-  `;
-}
-
-function renderChannelSummaryTable() {
-  return `
-    <div class="table-card">
-      <table>
-        <thead>
-          <tr>
-            <th>채널</th>
-            <th>상태</th>
-            <th class="text-right">오늘 예약</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${channels
-            .slice(0, 5)
-            .map(
-              (channel) => `
-                <tr>
-                  <td><strong>${channel.name}</strong></td>
-                  <td><span class="status-badge ${channel.status === "연결됨" ? "approved" : channel.status === "점검 필요" ? "pending" : "hold"}">${channel.status}</span></td>
-                  <td class="text-right">${Math.max(1, Math.round(channel.reservations / 4))}건</td>
-                </tr>
-              `,
-            )
             .join("")}
         </tbody>
       </table>
