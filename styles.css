@@ -1664,6 +1664,11 @@ button {
   background: var(--teal);
 }
 
+.segmented button:disabled {
+  cursor: default;
+  opacity: 0.42;
+}
+
 .select-control,
 .search-control {
   padding: 0 10px;
@@ -1824,6 +1829,7 @@ select option {
 }
 
 .reservation-bar {
+  grid-row: 1;
   z-index: 2;
   align-self: center;
   min-width: 42px;

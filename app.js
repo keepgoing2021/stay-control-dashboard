@@ -1,10 +1,13 @@
-const TODAY = new Date("2026-07-02T09:00:00+09:00");
+const KST_TIME_ZONE = "Asia/Seoul";
+const DEMO_TODAY_KEY = "2026-07-02";
+const TODAY = new Date(`${DEMO_TODAY_KEY}T09:00:00+09:00`);
 
 const state = {
   view: "today",
-  timelineStart: new Date("2026-07-02T00:00:00+09:00"),
+  timelineStart: new Date(`${DEMO_TODAY_KEY}T00:00:00+09:00`),
   roomTypeFilter: "전체",
   search: "",
+  isComposingSearch: false,
   alertBeforeAutoChange: true,
 };
 
@@ -13,8 +16,8 @@ const roomTypes = ["스탠다드", "디럭스", "패밀리룸", "도미토리"];
 const rooms = [
   { id: "room_101", name: "101", type: "스탠다드", floor: 1, status: "판매 가능", weekday: 69000, weekend: 89000 },
   { id: "room_102", name: "102", type: "스탠다드", floor: 1, status: "판매 가능", weekday: 69000, weekend: 89000 },
-  { id: "room_103", name: "103", type: "스탠다드", floor: 1, status: "청소 필요", weekday: 69000, weekend: 89000 },
-  { id: "room_104", name: "104", type: "스탠다드", floor: 1, status: "판매 가능", weekday: 69000, weekend: 89000 },
+  { id: "room_103", name: "103", type: "스탠다드", floor: 1, status: "투숙 중", weekday: 69000, weekend: 89000 },
+  { id: "room_104", name: "104", type: "스탠다드", floor: 1, status: "청소 필요", weekday: 69000, weekend: 89000 },
   { id: "room_201", name: "201", type: "스탠다드", floor: 2, status: "판매 가능", weekday: 72000, weekend: 92000 },
   { id: "room_202", name: "202", type: "스탠다드", floor: 2, status: "판매 가능", weekday: 72000, weekend: 92000 },
   { id: "room_203", name: "203", type: "스탠다드", floor: 2, status: "판매 가능", weekday: 72000, weekend: 92000 },
@@ -48,6 +51,19 @@ const channels = [
   { id: "naver", name: "네이버예약", status: "연결됨", commission: 6, multiplier: 1.0, revenue: 1310000, reservations: 10, color: "#20a060", lastSync: "6분 전", healthNote: "직접 예약 정상" },
   { id: "trip", name: "트립닷컴", status: "연결 대기", commission: 13, multiplier: 1.04, revenue: 620000, reservations: 4, color: "#3550aa", lastSync: "연결 전", healthNote: "객실 매핑 대기" },
 ];
+
+const UNKNOWN_CHANNEL = {
+  id: "unknown",
+  name: "알 수 없음",
+  status: "확인 필요",
+  commission: 0,
+  multiplier: 1,
+  revenue: 0,
+  reservations: 0,
+  color: "#777777",
+  lastSync: "-",
+  healthNote: "채널 ID를 확인하세요",
+};
 
 const reservations = [
   { id: "res_001", guest: "김민준", roomId: "room_101", channel: "yanolja", checkIn: "2026-07-02", checkOut: "2026-07-04", amount: 178000, status: "투숙 중" },
@@ -112,7 +128,7 @@ const maintenanceTasks = [
   { id: "task_001", roomId: "room_104", type: "청소", title: "퇴실 청소", detail: "최유진 체크아웃 후 재판매 준비", priority: "긴급", due: "10:30", assignee: "하우스키핑 A", status: "대기", nextStatus: "판매 가능" },
   { id: "task_002", roomId: "room_602B", type: "청소", title: "도미토리 침구 교체", detail: "한지수 체크아웃, 내일 김채린 입실", priority: "높음", due: "12:00", assignee: "하우스키핑 B", status: "진행 중", nextStatus: "판매 가능" },
   { id: "task_003", roomId: "room_304", type: "점검", title: "욕실 배수 확인", detail: "반복 신고 2회, 판매 재개 전 확인", priority: "높음", due: "15:00", assignee: "시설 담당", status: "대기", nextStatus: "판매 가능" },
-  { id: "task_004", roomId: "room_103", type: "청소", title: "입실 전 객실 재확인", detail: "아고다 도착 전 어메니티 보충", priority: "보통", due: "13:30", assignee: "프런트", status: "대기", nextStatus: "판매 가능" },
+  { id: "task_004", roomId: "room_103", type: "프런트", title: "투숙 중 요청 확인", detail: "아고다 투숙객 어메니티 보충 요청 확인", priority: "보통", due: "13:30", assignee: "프런트", status: "대기", nextStatus: "투숙 중" },
 ];
 
 const maintenanceHistory = [
@@ -176,13 +192,13 @@ const maintenanceProofs = [
 
 const predictiveRisks = [
   { id: "risk_001", roomId: "room_304", type: "반복 고장", title: "욕실 배수 지연 재발 가능성", score: 86, signal: "7일 내 2회 신고 · 점검 중 객실", action: "오늘 15:00 시설 점검 우선", status: "확인 필요" },
-  { id: "risk_002", roomId: "room_103", type: "청소 지연", title: "입실 전 재확인 지연 위험", score: 72, signal: "13:30 마감 · 현재 청소 필요", action: "프런트 확인 후 판매 유지", status: "확인 필요" },
+  { id: "risk_002", roomId: "room_104", type: "청소 지연", title: "퇴실 청소 지연 위험", score: 72, signal: "10:30 마감 · 퇴실 청소 대기", action: "하우스키핑 A 우선 배정", status: "확인 필요" },
   { id: "risk_003", roomId: "room_602B", type: "린넨 부족", title: "도미토리 침구 교체 지연 가능", score: 64, signal: "수건 재고 최소 수량 미달", action: "린넨실 수건 발주 요청", status: "관찰" },
 ];
 
 const revenueLeakage = [
   { id: "leak_001", roomId: "room_304", reason: "점검 중", blockedHours: 18, adr: 89000, estimatedLoss: 66750, recoverBy: "15:00 점검 완료 시 오늘 재판매 가능", status: "조치 필요" },
-  { id: "leak_002", roomId: "room_103", reason: "청소 필요", blockedHours: 4, adr: 69000, estimatedLoss: 11500, recoverBy: "13:30 전 확인 시 손실 없음", status: "관찰" },
+  { id: "leak_002", roomId: "room_104", reason: "청소 필요", blockedHours: 4, adr: 69000, estimatedLoss: 11500, recoverBy: "10:30 전 완료 시 손실 없음", status: "관찰" },
 ];
 
 const automationAlerts = [
@@ -210,15 +226,204 @@ const monthlyRevenue = [
   { label: "4월", value: 34 },
   { label: "5월", value: 39 },
   { label: "6월", value: 42 },
-  { label: "7월", value: 48 },
+  { label: "7월", value: 19.2 },
 ];
 
 const occupancyTrend = [62, 68, 73, 71, 79, 83, 86];
+
+const HTML_SAFE_TAGS = new Set(["div", "section", "article", "h2", "h3", "p", "span", "strong", "small", "button", "select", "option", "input", "table", "thead", "tbody", "tr", "th", "td"]);
+const HTML_SAFE_ATTRS = new Set(["class", "id", "type", "role", "placeholder", "value", "selected", "disabled", "title", "style"]);
+const HTML_SAFE_DATA_ATTRS = new Set([
+  "data-view",
+  "data-view-jump",
+  "data-scroll-target",
+  "data-channel",
+  "data-room",
+  "data-task",
+  "data-checklist",
+  "data-item",
+  "data-issue",
+  "data-supply",
+  "data-staff",
+  "data-proof",
+  "data-risk",
+  "data-leak",
+  "data-alert",
+  "data-id",
+  "data-rule",
+  "data-status",
+]);
+const KST_DATE_KEY_FORMATTER = new Intl.DateTimeFormat("en-CA", {
+  timeZone: KST_TIME_ZONE,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+const KST_DATE_LABEL_FORMATTER = new Intl.DateTimeFormat("ko-KR", {
+  timeZone: KST_TIME_ZONE,
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+  weekday: "long",
+});
+const KST_MONTH_DAY_FORMATTER = new Intl.DateTimeFormat("ko-KR", {
+  timeZone: KST_TIME_ZONE,
+  month: "numeric",
+  day: "numeric",
+});
+const KST_WEEKDAY_FORMATTER = new Intl.DateTimeFormat("ko-KR", {
+  timeZone: KST_TIME_ZONE,
+  weekday: "short",
+});
+const KST_HOUR_FORMATTER = new Intl.DateTimeFormat("ko-KR", {
+  timeZone: KST_TIME_ZONE,
+  hour: "numeric",
+  hour12: true,
+});
+
+let searchRenderTimer;
+
+sanitizeExternalData([
+  roomTypes,
+  rooms,
+  channels,
+  reservations,
+  pricingRecommendations,
+  rules,
+  maintenanceTasks,
+  maintenanceHistory,
+  recurringChecklists,
+  roomIssueHistory,
+  supplyInventory,
+  staffWorkloads,
+  maintenanceProofs,
+  predictiveRisks,
+  revenueLeakage,
+  automationAlerts,
+  monthlyOperationsReport,
+  monthlyRevenue,
+]);
 
 const content = document.getElementById("content");
 const title = document.getElementById("page-title");
 const toast = document.getElementById("toast");
 const approvalChip = document.getElementById("approval-count-chip");
+const todayLabel = document.getElementById("today-label");
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function escapeAttr(value) {
+  return escapeHtml(value).replaceAll("`", "&#96;");
+}
+
+function safeCssColor(value) {
+  return /^#[0-9a-f]{6}$/i.test(String(value ?? "")) ? value : "#777777";
+}
+
+function sanitizeExternalData(target) {
+  if (Array.isArray(target)) {
+    target.forEach((item, index) => {
+      target[index] = sanitizeExternalData(item);
+    });
+    return target;
+  }
+
+  if (target && typeof target === "object") {
+    Object.keys(target).forEach((key) => {
+      target[key] = sanitizeExternalData(target[key]);
+    });
+    return target;
+  }
+
+  return typeof target === "string" ? escapeHtml(target) : target;
+}
+
+function cleanInlineStyle(style) {
+  return String(style ?? "")
+    .split(";")
+    .map((declaration) => {
+      const separator = declaration.indexOf(":");
+      if (separator < 0) return "";
+
+      const property = declaration.slice(0, separator).trim().toLowerCase();
+      const value = declaration.slice(separator + 1).trim();
+
+      if (property.startsWith("--")) {
+        return /^(#[0-9a-f]{6}|var\(--[a-z0-9-]+\)|-?\d+(\.\d+)?)$/i.test(value) ? `${property}: ${value}` : "";
+      }
+
+      if (property === "grid-column") {
+        return /^\d+\s*\/\s*\d+$/.test(value) ? `${property}: ${value}` : "";
+      }
+
+      if (["height", "left", "top", "width"].includes(property)) {
+        return /^-?\d+(\.\d+)?px$/.test(value) ? `${property}: ${value}` : "";
+      }
+
+      if (property === "transform") {
+        return /^rotate\(-?\d+(\.\d+)?deg\)$/.test(value) ? `${property}: ${value}` : "";
+      }
+
+      if (property === "background") {
+        return /^linear-gradient\(180deg,\s*(#[0-9a-f]{6}|var\(--[a-z0-9-]+\)),\s*(#[0-9a-f]{6}|var\(--[a-z0-9-]+\))\)$/i.test(value)
+          ? `${property}: ${value}`
+          : "";
+      }
+
+      return "";
+    })
+    .filter(Boolean)
+    .join("; ");
+}
+
+function sanitizeHtml(markup) {
+  const template = document.createElement("template");
+  template.innerHTML = String(markup ?? "");
+
+  template.content.querySelectorAll("*").forEach((element) => {
+    const tagName = element.tagName.toLowerCase();
+    if (!HTML_SAFE_TAGS.has(tagName)) {
+      element.replaceWith(document.createTextNode(element.textContent ?? ""));
+      return;
+    }
+
+    Array.from(element.attributes).forEach((attribute) => {
+      const name = attribute.name.toLowerCase();
+      if (name.startsWith("on")) {
+        element.removeAttribute(attribute.name);
+        return;
+      }
+
+      const isAllowed = HTML_SAFE_ATTRS.has(name) || HTML_SAFE_DATA_ATTRS.has(name) || name.startsWith("aria-");
+      if (!isAllowed) {
+        element.removeAttribute(attribute.name);
+        return;
+      }
+
+      if (name === "style") {
+        const cleanStyle = cleanInlineStyle(attribute.value);
+        if (cleanStyle) {
+          element.setAttribute("style", cleanStyle);
+        } else {
+          element.removeAttribute("style");
+        }
+      }
+    });
+  });
+
+  return template.innerHTML;
+}
+
+function setContent(markup) {
+  content.innerHTML = sanitizeHtml(markup);
+}
 
 function formatWon(value) {
   return `₩${Number(value).toLocaleString("ko-KR")}`;
@@ -234,16 +439,15 @@ function parseDate(value) {
 }
 
 function dateKey(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  const parts = KST_DATE_KEY_FORMATTER.formatToParts(date).reduce((result, part) => {
+    result[part.type] = part.value;
+    return result;
+  }, {});
+  return `${parts.year}-${parts.month}-${parts.day}`;
 }
 
 function addDays(date, days) {
-  const next = new Date(date);
-  next.setDate(next.getDate() + days);
-  return next;
+  return new Date(date.getTime() + days * 86400000);
 }
 
 function diffDays(start, end) {
@@ -255,11 +459,35 @@ function visibleDays() {
 }
 
 function getChannel(id) {
-  return channels.find((channel) => channel.id === id) || channels[0];
+  return channels.find((channel) => channel.id === id) || UNKNOWN_CHANNEL;
 }
 
 function getRoom(id) {
   return rooms.find((room) => room.id === id);
+}
+
+function getTodayDateLabel() {
+  return KST_DATE_LABEL_FORMATTER.format(TODAY);
+}
+
+function getTodayHourLabel() {
+  const parts = KST_HOUR_FORMATTER.formatToParts(TODAY).reduce((result, part) => {
+    result[part.type] = part.value;
+    return result;
+  }, {});
+  return `${parts.dayPeriod ?? ""} ${parts.hour}시`.trim();
+}
+
+function formatMonthDay(date) {
+  return KST_MONTH_DAY_FORMATTER.format(date).replace(". ", "/").replace(".", "");
+}
+
+function formatWeekday(date) {
+  return KST_WEEKDAY_FORMATTER.format(date);
+}
+
+function formatTimelineRange(start, end) {
+  return `${formatMonthDay(start)} ~ ${formatMonthDay(end)}`;
 }
 
 function roomStateClass(status) {
@@ -298,8 +526,33 @@ function calculateKpis() {
   const occupancy = Math.round((activeToday.length / rooms.length) * 100);
   const averageDailyRoom = activeToday.length ? Math.round(todayRevenue / activeToday.length) : 0;
   const pending = pricingRecommendations.filter((item) => item.status === "승인 대기").length;
+  const pendingDelta = calculatePendingPriceDelta();
 
-  return { checkIns, checkOuts, todayRevenue, occupancy, averageDailyRoom, pending };
+  return { checkIns, checkOuts, todayRevenue, occupancy, averageDailyRoom, pending, pendingDelta };
+}
+
+function calculatePendingPriceDelta() {
+  return getPendingPricingRecommendations().reduce((sum, item) => sum + item.delta, 0);
+}
+
+function getChannelStatusCounts() {
+  return channels.reduce(
+    (counts, channel) => {
+      if (channel.status === "연결됨") counts.connected += 1;
+      else if (channel.status === "점검 필요") counts.needsCheck += 1;
+      else counts.waiting += 1;
+      return counts;
+    },
+    { connected: 0, needsCheck: 0, waiting: 0 },
+  );
+}
+
+function getMonthlyChannelRevenue() {
+  return channels.reduce((sum, channel) => sum + channel.revenue, 0);
+}
+
+function getTopRevenueChannel() {
+  return channels.reduce((top, channel) => (channel.revenue > top.revenue ? channel : top), channels[0]);
 }
 
 function getTodayArrivals() {
@@ -318,6 +571,14 @@ function getPendingPricingRecommendations() {
 
 function getOpenMaintenanceTasks() {
   return maintenanceTasks.filter((task) => task.status !== "완료");
+}
+
+function nextMaintenanceTaskId() {
+  const maxTaskNumber = maintenanceTasks.reduce((max, task) => {
+    const match = /^task_(\d+)$/.exec(task.id);
+    return match ? Math.max(max, Number(match[1])) : max;
+  }, 0);
+  return `task_${String(maxTaskNumber + 1).padStart(3, "0")}`;
 }
 
 function getRoomMaintenanceTasks(roomId) {
@@ -383,7 +644,7 @@ function formatStayRange(reservation) {
 }
 
 function renderChannelPill(channel) {
-  return `<span class="channel-pill" style="--channel-color: ${channel.color}">${channel.name}</span>`;
+  return `<span class="channel-pill" style="--channel-color: ${safeCssColor(channel.color)}">${channel.name}</span>`;
 }
 
 function setTitle(label) {
@@ -408,7 +669,7 @@ function renderKpis() {
     { label: "오늘 체크아웃", value: `${kpis.checkOuts}팀`, sub: "객실 정리 예정", color: "var(--teal)" },
     { label: "객실 점유율", value: `${kpis.occupancy}%`, sub: `판매 가능 ${availableRoomsOn(TODAY)}실`, color: "var(--green)" },
     { label: "오늘 예상 매출", value: formatWon(kpis.todayRevenue), sub: "더미 데이터 기준", color: "var(--amber)" },
-    { label: "가격 승인 대기", value: `${kpis.pending}건`, sub: "예상 증가 ₩860,000", color: "var(--red)" },
+    { label: "가격 승인 대기", value: `${kpis.pending}건`, sub: `예상 증가 ${formatSignedWon(kpis.pendingDelta)}`, color: "var(--red)" },
   ];
 
   return `
@@ -802,7 +1063,7 @@ function renderChannelHealthBoard() {
                 <strong>${channel.name}</strong>
                 <span>${channel.lastSync} · ${channel.healthNote}</span>
               </div>
-              <button class="quiet-button channel-health-check" data-channel="${channel.name}" type="button">확인</button>
+              <button class="quiet-button channel-health-check" data-channel="${escapeAttr(channel.name)}" type="button">확인</button>
             </div>
           `,
         )
@@ -1257,15 +1518,15 @@ function renderTimelineControls() {
       <button class="ghost-button" id="prev-week" type="button" aria-label="이전 기간">‹</button>
       <button class="ghost-button" id="today-week" type="button">오늘</button>
       <button class="ghost-button" id="next-week" type="button" aria-label="다음 기간">›</button>
-      <strong>${start.getMonth() + 1}/${start.getDate()} ~ ${end.getMonth() + 1}/${end.getDate()}</strong>
+      <strong>${formatTimelineRange(start, end)}</strong>
       <div class="segmented" aria-label="보기 방식">
         <button class="active" type="button">일별</button>
-        <button type="button">시간별</button>
+        <button type="button" disabled title="시간별 보기는 다음 단계에서 연결">시간별</button>
       </div>
       <select class="select-control" id="room-type-filter" aria-label="객실 타입 필터">
-        ${["전체", ...roomTypes].map((type) => `<option value="${type}" ${state.roomTypeFilter === type ? "selected" : ""}>${type}</option>`).join("")}
+        ${["전체", ...roomTypes].map((type) => `<option value="${escapeAttr(type)}" ${state.roomTypeFilter === type ? "selected" : ""}>${type}</option>`).join("")}
       </select>
-      <input class="search-control" id="room-search" value="${state.search}" placeholder="객실 검색" />
+      <input class="search-control" id="room-search" value="${escapeAttr(state.search)}" placeholder="객실 검색" />
     </div>
   `;
 }
@@ -1290,8 +1551,8 @@ function renderTimeline(limitRows = false) {
           const isToday = dateKey(day) === dateKey(TODAY);
           return `
             <div class="date-cell ${isToday ? "today" : ""}">
-              <span>${day.getMonth() + 1}/${day.getDate()}</span>
-              <span class="date-weekday">${["일", "월", "화", "수", "목", "금", "토"][day.getDay()]}</span>
+              <span>${formatMonthDay(day)}</span>
+              <span class="date-weekday">${formatWeekday(day)}</span>
             </div>
           `;
         })
@@ -1315,8 +1576,8 @@ function renderTimeline(limitRows = false) {
               return `
                 <div
                   class="reservation-bar ${outline}"
-                  style="grid-column: ${startOffset + 2} / ${endOffset + 2}; --bar-bg: ${channel.color}; --bar-border: ${channel.color};"
-                  title="${reservation.guest} · ${channel.name} · ${formatWon(reservation.amount)}"
+                   style="grid-column: ${startOffset + 2} / ${endOffset + 2}; --bar-bg: ${safeCssColor(channel.color)}; --bar-border: ${safeCssColor(channel.color)};"
+                   title="${escapeAttr(`${reservation.guest} · ${channel.name} · ${formatWon(reservation.amount)}`)}"
                 >
                   ${reservation.guest}
                 </div>
@@ -1349,7 +1610,7 @@ function renderTimeline(limitRows = false) {
   `;
 
   return `
-    <div class="timeline-wrap">
+    <div class="timeline-wrap" id="timeline-region">
       <div class="timeline" style="--today-index: ${todayIndex >= 0 ? todayIndex : -10}">
         ${todayIndex >= 0 ? `<div class="today-line"></div>` : ""}
         ${header}
@@ -1363,11 +1624,11 @@ function renderTimeline(limitRows = false) {
 function renderTodayView() {
   setTitle("오늘의 운영");
   const kpis = calculateKpis();
-  content.innerHTML = `
+  setContent(`
     <div class="view-stack">
       <section class="ops-overview">
         <div class="ops-summary">
-          <span class="eyebrow">2026년 7월 2일 목요일 · 오전 9시 기준</span>
+          <span class="eyebrow">${getTodayDateLabel()} · ${getTodayHourLabel()} 기준</span>
           <h2>입실 ${kpis.checkIns}팀, 퇴실 ${kpis.checkOuts}팀, 가격 승인 ${kpis.pending}건</h2>
           <p>입실 준비 → 퇴실·청소 → 객실 점검 → 가격 승인 → 채널 점검</p>
         </div>
@@ -1406,14 +1667,14 @@ function renderTodayView() {
         ${renderTimeline(true)}
       </section>
     </div>
-  `;
+  `);
   bindCommonControls();
   bindMaintenanceControls();
 }
 
 function renderReservationsView() {
   setTitle("객실·예약 관리");
-  content.innerHTML = `
+  setContent(`
     <div class="view-stack">
       ${renderKpis()}
       <section class="section-band">
@@ -1436,7 +1697,7 @@ function renderReservationsView() {
         ${renderReservationTable()}
       </section>
     </div>
-  `;
+  `);
   bindCommonControls();
 }
 
@@ -1481,13 +1742,14 @@ function renderReservationTable() {
 
 function renderChannelsView() {
   setTitle("예약채널 관리");
-  content.innerHTML = `
+  const channelCounts = getChannelStatusCounts();
+  setContent(`
     <div class="view-stack">
       <section class="section-band">
         <div class="section-head">
           <div>
             <h2>연결된 예약채널</h2>
-            <p>연결됨 6개 · 점검 필요 1개 · 연결 대기 1개</p>
+            <p>연결됨 ${channelCounts.connected}개 · 점검 필요 ${channelCounts.needsCheck}개 · 연결 대기 ${channelCounts.waiting}개</p>
           </div>
           <button class="primary-button" id="sync-all-channels" type="button">모든 채널 동기화</button>
         </div>
@@ -1513,7 +1775,7 @@ function renderChannelsView() {
                       <strong>${channel.reservations}건</strong>
                     </div>
                   </div>
-                  <button class="ghost-button channel-sync" data-channel="${channel.name}" type="button">동기화 확인</button>
+                  <button class="ghost-button channel-sync" data-channel="${escapeAttr(channel.name)}" type="button">동기화 확인</button>
                 </article>
               `,
             )
@@ -1530,7 +1792,7 @@ function renderChannelsView() {
         ${renderChannelRevenueChart()}
       </section>
     </div>
-  `;
+  `);
   bindChannelControls();
 }
 
@@ -1543,7 +1805,7 @@ function renderChannelRevenueChart() {
           .map(
             (channel) => `
               <div class="bar-item">
-                <div class="bar-fill" style="height: ${Math.round((channel.revenue / max) * 170)}px; background: linear-gradient(180deg, ${channel.color}, #8dc7d4)"></div>
+                <div class="bar-fill" style="height: ${Math.round((channel.revenue / max) * 170)}px; background: linear-gradient(180deg, ${safeCssColor(channel.color)}, #8dc7d4)"></div>
                 <div class="bar-label">${channel.name.replace("예약", "")}</div>
               </div>
             `,
@@ -1558,7 +1820,7 @@ function renderPricingView() {
   setTitle("가격 최적화");
   const pendingCount = pricingRecommendations.filter((item) => item.status === "승인 대기").length;
   const holdCount = pricingRecommendations.filter((item) => item.status === "보류").length;
-  content.innerHTML = `
+  setContent(`
     <div class="view-stack">
       <section class="section-band">
         <div class="section-head">
@@ -1603,7 +1865,7 @@ function renderPricingView() {
         </div>
       </section>
     </div>
-  `;
+  `);
   bindPricingControls();
 }
 
@@ -1643,13 +1905,16 @@ function renderPriceCard(item) {
 
 function renderReportsView() {
   setTitle("수익 분석");
-  content.innerHTML = `
+  const monthlyTotal = getMonthlyChannelRevenue();
+  const topChannel = getTopRevenueChannel();
+  const pendingDelta = calculatePendingPriceDelta();
+  setContent(`
     <div class="view-stack">
       <div class="kpi-grid">
         <article class="kpi-card" style="--accent: var(--green)">
           <div class="kpi-label">이번 달 예상 매출</div>
-          <div class="kpi-value">${formatWon(48200000)}</div>
-          <div class="kpi-sub">전월 대비 +14%</div>
+          <div class="kpi-value">${formatWon(monthlyTotal)}</div>
+          <div class="kpi-sub">채널 매출 합계 기준</div>
         </article>
         <article class="kpi-card" style="--accent: var(--blue)">
           <div class="kpi-label">평균 객실단가</div>
@@ -1658,12 +1923,12 @@ function renderReportsView() {
         </article>
         <article class="kpi-card" style="--accent: var(--amber)">
           <div class="kpi-label">예약채널 매출 1위</div>
-          <div class="kpi-value">부킹닷컴</div>
-          <div class="kpi-sub">이번 달 24건</div>
+          <div class="kpi-value">${topChannel.name}</div>
+          <div class="kpi-sub">이번 달 ${topChannel.reservations}건</div>
         </article>
         <article class="kpi-card" style="--accent: var(--teal)">
           <div class="kpi-label">가격 추천 효과</div>
-          <div class="kpi-value">${formatWon(860000)}</div>
+          <div class="kpi-value">${formatSignedWon(pendingDelta)}</div>
           <div class="kpi-sub">승인 시 예상 증가분</div>
         </article>
         <article class="kpi-card" style="--accent: var(--red)">
@@ -1702,7 +1967,7 @@ function renderReportsView() {
         ${renderRoomTypeTable()}
       </section>
     </div>
-  `;
+  `);
 }
 
 function renderMonthlyRevenueChart() {
@@ -1787,6 +2052,25 @@ function renderRoomTypeTable() {
   `;
 }
 
+function isTimelineLimited() {
+  return state.view === "today";
+}
+
+function refreshTimelineOnly() {
+  const timeline = document.getElementById("timeline-region");
+  if (!timeline) {
+    render();
+    return;
+  }
+
+  timeline.outerHTML = sanitizeHtml(renderTimeline(isTimelineLimited()));
+}
+
+function scheduleTimelineSearchRefresh() {
+  window.clearTimeout(searchRenderTimer);
+  searchRenderTimer = window.setTimeout(refreshTimelineOnly, 120);
+}
+
 function bindCommonControls() {
   document.getElementById("prev-week")?.addEventListener("click", () => {
     state.timelineStart = addDays(state.timelineStart, -7);
@@ -1797,16 +2081,27 @@ function bindCommonControls() {
     render();
   });
   document.getElementById("today-week")?.addEventListener("click", () => {
-    state.timelineStart = new Date("2026-07-02T00:00:00+09:00");
+    state.timelineStart = parseDate(DEMO_TODAY_KEY);
     render();
   });
   document.getElementById("room-type-filter")?.addEventListener("change", (event) => {
     state.roomTypeFilter = event.target.value;
     render();
   });
-  document.getElementById("room-search")?.addEventListener("input", (event) => {
+  const roomSearch = document.getElementById("room-search");
+  roomSearch?.addEventListener("compositionstart", () => {
+    state.isComposingSearch = true;
+  });
+  roomSearch?.addEventListener("compositionend", (event) => {
+    state.isComposingSearch = false;
     state.search = event.target.value;
-    render();
+    refreshTimelineOnly();
+  });
+  roomSearch?.addEventListener("input", (event) => {
+    state.search = event.target.value;
+    if (!event.isComposing && !state.isComposingSearch) {
+      scheduleTimelineSearchRefresh();
+    }
   });
 }
 
@@ -1931,7 +2226,7 @@ function bindMaintenanceControls() {
       const alreadyExists = maintenanceTasks.some((task) => task.roomId === issue.roomId && task.title === issue.title && task.status !== "완료");
       if (!alreadyExists) {
         maintenanceTasks.push({
-          id: `task_${String(maintenanceTasks.length + 1).padStart(3, "0")}`,
+          id: nextMaintenanceTaskId(),
           roomId: issue.roomId,
           type: "점검",
           title: issue.title,
@@ -2047,6 +2342,7 @@ function syncNavState() {
 
 function render() {
   syncNavState();
+  if (todayLabel) todayLabel.textContent = getTodayDateLabel();
   updateApprovalChip();
 
   if (state.view === "reservations") {
