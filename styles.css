@@ -398,7 +398,12 @@ button {
 .rule-card,
 .maintenance-panel,
 .maintenance-task,
-.room-status-card {
+.room-status-card,
+.checklist-card,
+.issue-row,
+.inventory-row,
+.staff-card,
+.proof-row {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface);
@@ -420,6 +425,11 @@ button {
 .maintenance-panel:hover,
 .maintenance-task:hover,
 .room-status-card:hover,
+.checklist-card:hover,
+.issue-row:hover,
+.inventory-row:hover,
+.staff-card:hover,
+.proof-row:hover,
 .chart-card:hover,
 .table-card:hover {
   transform: translateY(-3px);
@@ -1130,6 +1140,204 @@ button {
   font-weight: 750;
 }
 
+.maintenance-depth {
+  display: grid;
+  gap: 14px;
+  padding-top: 4px;
+}
+
+.section-head.compact {
+  margin-bottom: 0;
+}
+
+.maintenance-depth-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.maintenance-depth-grid .maintenance-panel-wide {
+  grid-column: 1 / -1;
+}
+
+.detail-list {
+  display: grid;
+  gap: 10px;
+}
+
+.checklist-card,
+.issue-row,
+.inventory-row,
+.staff-card,
+.proof-row {
+  padding: 12px;
+  background:
+    linear-gradient(120deg, rgba(0, 255, 255, 0.05), rgba(255, 0, 255, 0.025)),
+    rgba(0, 0, 0, 0.2);
+}
+
+.detail-card-head,
+.issue-row,
+.inventory-row,
+.proof-row,
+.staff-card-head {
+  display: grid;
+  align-items: center;
+  gap: 10px;
+}
+
+.detail-card-head,
+.staff-card-head {
+  grid-template-columns: 1fr auto;
+}
+
+.issue-row,
+.inventory-row,
+.proof-row {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
+.detail-card-head strong,
+.issue-row strong,
+.inventory-row strong,
+.staff-card strong,
+.proof-row strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.detail-card-head span,
+.issue-row span,
+.inventory-row span,
+.staff-card span,
+.proof-row span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.progress-pill {
+  min-width: 48px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: #111111 !important;
+  background: var(--teal);
+  font-family: var(--font-number);
+  font-weight: 900 !important;
+}
+
+.checklist-items {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.checklist-toggle {
+  min-height: 38px;
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  background: rgba(0, 0, 0, 0.22);
+  text-align: left;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.checklist-toggle span {
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  color: #111111;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.checklist-toggle.done {
+  color: var(--green);
+  border-color: rgba(50, 205, 50, 0.5);
+}
+
+.checklist-toggle.done span {
+  background: var(--green);
+}
+
+.inventory-stock {
+  display: grid;
+  gap: 5px;
+  justify-items: end;
+}
+
+.inventory-stock strong {
+  color: var(--teal);
+  font-family: var(--font-number);
+  font-size: 16px;
+}
+
+.staff-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.staff-card {
+  display: grid;
+  gap: 10px;
+}
+
+.staff-counts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.staff-counts span {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.06);
+  font-family: var(--font-number);
+  font-weight: 900;
+}
+
+.staff-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.proof-thumb {
+  width: 46px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: #111111;
+  background: linear-gradient(135deg, var(--teal), var(--red));
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.proof-row {
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+}
+
 .two-column {
   display: grid;
   grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.55fr);
@@ -1811,6 +2019,8 @@ tr:last-child td {
   .ops-workflow,
   .maintenance-summary,
   .maintenance-grid,
+  .maintenance-depth-grid,
+  .staff-grid,
   .guest-board,
   .pricing-grid,
   .channel-grid,
@@ -1834,7 +2044,10 @@ tr:last-child td {
 
   .panel-head,
   .maintenance-task,
-  .log-row {
+  .log-row,
+  .issue-row,
+  .inventory-row,
+  .proof-row {
     grid-template-columns: 1fr;
   }
 
@@ -1864,5 +2077,18 @@ tr:last-child td {
 
   .channel-health-row .quiet-button {
     grid-column: 1 / -1;
+  }
+
+  .detail-card-head,
+  .staff-card-head {
+    grid-template-columns: 1fr;
+  }
+
+  .inventory-stock {
+    justify-items: start;
+  }
+
+  .proof-thumb {
+    width: 100%;
   }
 }

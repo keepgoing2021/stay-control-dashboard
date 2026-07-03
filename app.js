@@ -121,6 +121,59 @@ const maintenanceHistory = [
   { id: "log_003", roomId: "room_601A", title: "공용 샤워실 소모품 보충", completedAt: "07:40", assignee: "프런트", result: "완료" },
 ];
 
+const recurringChecklists = [
+  {
+    id: "check_public_bath",
+    title: "공용 욕실 야간 점검",
+    area: "6층 도미토리",
+    due: "20:00",
+    assignee: "프런트",
+    items: [
+      { id: "soap", label: "샴푸·바디워시 보충", done: false },
+      { id: "drain", label: "배수구 막힘 확인", done: false },
+      { id: "towel", label: "공용 수건 회수", done: true },
+    ],
+  },
+  {
+    id: "check_fire_exit",
+    title: "비상구·소화기 체크",
+    area: "전층",
+    due: "금요일",
+    assignee: "시설 담당",
+    items: [
+      { id: "exit", label: "비상구 적치물 없음", done: true },
+      { id: "light", label: "유도등 정상 점등", done: false },
+      { id: "extinguisher", label: "소화기 압력 확인", done: false },
+    ],
+  },
+];
+
+const roomIssueHistory = [
+  { id: "issue_001", roomId: "room_304", title: "욕실 배수 지연", count: 2, lastReported: "어제 21:10", severity: "높음", status: "추적 중" },
+  { id: "issue_002", roomId: "room_502", title: "냉장고 소음", count: 3, lastReported: "오늘 08:20", severity: "보통", status: "완료 후 관찰" },
+  { id: "issue_003", roomId: "room_602A", title: "침대 사다리 흔들림", count: 1, lastReported: "어제 18:40", severity: "보통", status: "다음 청소 때 확인" },
+];
+
+const supplyInventory = [
+  { id: "supply_towel", name: "수건", stock: 38, min: 45, unit: "장", location: "린넨실", status: "부족" },
+  { id: "supply_sheet", name: "침대 시트", stock: 62, min: 50, unit: "세트", location: "5층 창고", status: "정상" },
+  { id: "supply_shampoo", name: "샴푸 리필", stock: 7, min: 10, unit: "병", location: "공용 욕실", status: "부족" },
+  { id: "supply_keycard", name: "키카드", stock: 24, min: 20, unit: "개", location: "프런트", status: "정상" },
+];
+
+const staffWorkloads = [
+  { id: "staff_house_a", name: "하우스키핑 A", role: "객실 청소", open: 2, done: 3, next: "104 퇴실 청소", load: "높음" },
+  { id: "staff_house_b", name: "하우스키핑 B", role: "린넨·도미토리", open: 1, done: 2, next: "602B 침구 교체", load: "보통" },
+  { id: "staff_front", name: "프런트", role: "입실·공용공간", open: 2, done: 1, next: "103 입실 전 확인", load: "보통" },
+  { id: "staff_facility", name: "시설 담당", role: "점검·수리", open: 1, done: 2, next: "304 욕실 배수", load: "주의" },
+];
+
+const maintenanceProofs = [
+  { id: "proof_001", roomId: "room_502", title: "냉장고 소음 확인", type: "사진", status: "첨부됨", file: "502-fridge-check.jpg" },
+  { id: "proof_002", roomId: "room_304", title: "욕실 배수 상태", type: "사진", status: "요청됨", file: "업로드 대기" },
+  { id: "proof_003", roomId: "room_601A", title: "공용 샤워실 소모품", type: "사진", status: "첨부됨", file: "601A-shower-supply.jpg" },
+];
+
 const monthlyRevenue = [
   { label: "1월", value: 24 },
   { label: "2월", value: 28 },
@@ -262,6 +315,23 @@ function maintenanceStatusClass(status) {
 function priorityClass(priority) {
   if (priority === "긴급") return "urgent";
   if (priority === "높음") return "high";
+  return "normal";
+}
+
+function getChecklistProgress(checklist) {
+  const done = checklist.items.filter((item) => item.done).length;
+  return { done, total: checklist.items.length };
+}
+
+function inventoryStatusClass(status) {
+  if (status === "부족") return "urgent";
+  if (status === "발주 요청") return "high";
+  return "normal";
+}
+
+function workloadClass(load) {
+  if (load === "높음") return "urgent";
+  if (load === "주의") return "high";
   return "normal";
 }
 
@@ -733,6 +803,187 @@ function renderMaintenanceLog() {
   `;
 }
 
+function renderRecurringChecklistPanel() {
+  return `
+    <div class="detail-list">
+      ${recurringChecklists
+        .map((checklist) => {
+          const progress = getChecklistProgress(checklist);
+          return `
+            <article class="checklist-card">
+              <div class="detail-card-head">
+                <div>
+                  <strong>${checklist.title}</strong>
+                  <span>${checklist.area} · 마감 ${checklist.due} · ${checklist.assignee}</span>
+                </div>
+                <span class="progress-pill">${progress.done}/${progress.total}</span>
+              </div>
+              <div class="checklist-items">
+                ${checklist.items
+                  .map(
+                    (item) => `
+                      <button class="checklist-toggle ${item.done ? "done" : ""}" data-checklist="${checklist.id}" data-item="${item.id}" type="button">
+                        <span>${item.done ? "✓" : ""}</span>
+                        ${item.label}
+                      </button>
+                    `,
+                  )
+                  .join("")}
+              </div>
+            </article>
+          `;
+        })
+        .join("")}
+    </div>
+  `;
+}
+
+function renderRoomIssueHistoryPanel() {
+  return `
+    <div class="detail-list">
+      ${roomIssueHistory
+        .map((issue) => {
+          const room = getRoom(issue.roomId);
+          return `
+            <article class="issue-row">
+              <div>
+                <strong>${room.name} · ${issue.title}</strong>
+                <span>${issue.lastReported} · ${issue.count}회 기록 · ${issue.status}</span>
+              </div>
+              <span class="priority-chip ${priorityClass(issue.severity)}">${issue.severity}</span>
+              <button class="quiet-button issue-task-create" data-issue="${issue.id}" type="button">점검 추가</button>
+            </article>
+          `;
+        })
+        .join("")}
+    </div>
+  `;
+}
+
+function renderSupplyInventoryPanel() {
+  return `
+    <div class="detail-list">
+      ${supplyInventory
+        .map(
+          (item) => `
+            <article class="inventory-row">
+              <div>
+                <strong>${item.name}</strong>
+                <span>${item.location} · 최소 ${item.min}${item.unit}</span>
+              </div>
+              <div class="inventory-stock">
+                <strong>${item.stock}${item.unit}</strong>
+                <span class="priority-chip ${inventoryStatusClass(item.status)}">${item.status}</span>
+              </div>
+              <button class="quiet-button inventory-reorder" data-supply="${item.id}" type="button">발주 요청</button>
+            </article>
+          `,
+        )
+        .join("")}
+    </div>
+  `;
+}
+
+function renderStaffWorkloadPanel() {
+  return `
+    <div class="staff-grid">
+      ${staffWorkloads
+        .map(
+          (staff) => `
+            <article class="staff-card">
+              <div class="staff-card-head">
+                <div>
+                  <strong>${staff.name}</strong>
+                  <span>${staff.role}</span>
+                </div>
+                <span class="priority-chip ${workloadClass(staff.load)}">${staff.load}</span>
+              </div>
+              <div class="staff-counts">
+                <span>진행 ${staff.open}</span>
+                <span>완료 ${staff.done}</span>
+              </div>
+              <p>다음: ${staff.next}</p>
+            </article>
+          `,
+        )
+        .join("")}
+    </div>
+  `;
+}
+
+function renderProofPanel() {
+  return `
+    <div class="detail-list">
+      ${maintenanceProofs
+        .map((proof) => {
+          const room = getRoom(proof.roomId);
+          return `
+            <article class="proof-row">
+              <div class="proof-thumb" aria-hidden="true">${proof.status === "첨부됨" ? "IMG" : "+"}</div>
+              <div>
+                <strong>${room.name} · ${proof.title}</strong>
+                <span>${proof.type} · ${proof.file}</span>
+              </div>
+              <span class="status-badge ${proof.status === "첨부됨" ? "approved" : "pending"}">${proof.status}</span>
+              <button class="quiet-button proof-complete" data-proof="${proof.id}" type="button">${proof.status === "첨부됨" ? "보기" : "첨부 표시"}</button>
+            </article>
+          `;
+        })
+        .join("")}
+    </div>
+  `;
+}
+
+function renderMaintenanceDepth() {
+  return `
+    <div class="maintenance-depth">
+      <div class="section-head compact">
+        <div>
+          <h2>2차 운영 관리</h2>
+          <p>반복 점검, 문제 이력, 소모품, 담당자 현황까지 확장합니다.</p>
+        </div>
+      </div>
+      <div class="maintenance-depth-grid">
+        <div class="maintenance-panel">
+          <div class="panel-head">
+            <h3>반복 점검 체크리스트</h3>
+            <span>정기 업무 누락을 줄입니다.</span>
+          </div>
+          ${renderRecurringChecklistPanel()}
+        </div>
+        <div class="maintenance-panel">
+          <div class="panel-head">
+            <h3>객실 문제 이력</h3>
+            <span>반복 고장 객실을 추적합니다.</span>
+          </div>
+          ${renderRoomIssueHistoryPanel()}
+        </div>
+        <div class="maintenance-panel">
+          <div class="panel-head">
+            <h3>소모품·린넨 재고</h3>
+            <span>최소 수량 이하만 빠르게 요청합니다.</span>
+          </div>
+          ${renderSupplyInventoryPanel()}
+        </div>
+        <div class="maintenance-panel">
+          <div class="panel-head">
+            <h3>담당자 작업 현황</h3>
+            <span>업무가 한 사람에게 몰리는지 봅니다.</span>
+          </div>
+          ${renderStaffWorkloadPanel()}
+        </div>
+        <div class="maintenance-panel maintenance-panel-wide">
+          <div class="panel-head">
+            <h3>사진 증빙</h3>
+            <span>현장 확인 자료를 작업 기록과 연결합니다.</span>
+          </div>
+          ${renderProofPanel()}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function renderMaintenanceCenter() {
   const openTasks = getOpenMaintenanceTasks();
   const channelIssues = channels.filter((channel) => channel.status !== "연결됨");
@@ -782,6 +1033,7 @@ function renderMaintenanceCenter() {
         </div>
         ${renderMaintenanceLog()}
       </div>
+      ${renderMaintenanceDepth()}
     </section>
   `;
 }
@@ -1446,6 +1698,69 @@ function bindMaintenanceControls() {
   document.querySelectorAll(".channel-health-check").forEach((button) => {
     button.addEventListener("click", () => {
       showToast(`${button.dataset.channel} 채널 상태를 확인했습니다.`);
+    });
+  });
+
+  document.querySelectorAll(".checklist-toggle").forEach((button) => {
+    button.addEventListener("click", () => {
+      const checklist = recurringChecklists.find((item) => item.id === button.dataset.checklist);
+      const checklistItem = checklist?.items.find((item) => item.id === button.dataset.item);
+      if (!checklist || !checklistItem) return;
+      checklistItem.done = !checklistItem.done;
+      showToast(`${checklist.title} 항목을 ${checklistItem.done ? "완료" : "미완료"}로 변경했습니다.`);
+      renderTodayView();
+    });
+  });
+
+  document.querySelectorAll(".issue-task-create").forEach((button) => {
+    button.addEventListener("click", () => {
+      const issue = roomIssueHistory.find((item) => item.id === button.dataset.issue);
+      if (!issue) return;
+      const room = getRoom(issue.roomId);
+      const alreadyExists = maintenanceTasks.some((task) => task.roomId === issue.roomId && task.title === issue.title && task.status !== "완료");
+      if (!alreadyExists) {
+        maintenanceTasks.push({
+          id: `task_${String(maintenanceTasks.length + 1).padStart(3, "0")}`,
+          roomId: issue.roomId,
+          type: "점검",
+          title: issue.title,
+          detail: `${issue.count}회 반복 기록 · ${issue.lastReported} 마지막 신고`,
+          priority: issue.severity === "높음" ? "높음" : "보통",
+          due: "17:00",
+          assignee: "시설 담당",
+          status: "대기",
+          nextStatus: "판매 가능",
+        });
+      }
+      issue.status = "점검 등록";
+      showToast(`${room.name} ${issue.title} 점검 작업을 추가했습니다.`);
+      renderTodayView();
+    });
+  });
+
+  document.querySelectorAll(".inventory-reorder").forEach((button) => {
+    button.addEventListener("click", () => {
+      const supply = supplyInventory.find((item) => item.id === button.dataset.supply);
+      if (!supply) return;
+      supply.status = "발주 요청";
+      showToast(`${supply.name} 발주 요청을 표시했습니다.`);
+      renderTodayView();
+    });
+  });
+
+  document.querySelectorAll(".proof-complete").forEach((button) => {
+    button.addEventListener("click", () => {
+      const proof = maintenanceProofs.find((item) => item.id === button.dataset.proof);
+      if (!proof) return;
+      if (proof.status !== "첨부됨") {
+        const room = getRoom(proof.roomId);
+        proof.status = "첨부됨";
+        proof.file = `${room.name}-maintenance-proof.jpg`;
+        showToast(`${room.name} ${proof.title} 증빙을 첨부 완료로 표시했습니다.`);
+        renderTodayView();
+        return;
+      }
+      showToast(`${proof.file} 더미 증빙을 확인했습니다.`);
     });
   });
 }
