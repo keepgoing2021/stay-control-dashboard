@@ -174,6 +174,35 @@ const maintenanceProofs = [
   { id: "proof_003", roomId: "room_601A", title: "공용 샤워실 소모품", type: "사진", status: "첨부됨", file: "601A-shower-supply.jpg" },
 ];
 
+const predictiveRisks = [
+  { id: "risk_001", roomId: "room_304", type: "반복 고장", title: "욕실 배수 지연 재발 가능성", score: 86, signal: "7일 내 2회 신고 · 점검 중 객실", action: "오늘 15:00 시설 점검 우선", status: "확인 필요" },
+  { id: "risk_002", roomId: "room_103", type: "청소 지연", title: "입실 전 재확인 지연 위험", score: 72, signal: "13:30 마감 · 현재 청소 필요", action: "프런트 확인 후 판매 유지", status: "확인 필요" },
+  { id: "risk_003", roomId: "room_602B", type: "린넨 부족", title: "도미토리 침구 교체 지연 가능", score: 64, signal: "수건 재고 최소 수량 미달", action: "린넨실 수건 발주 요청", status: "관찰" },
+];
+
+const revenueLeakage = [
+  { id: "leak_001", roomId: "room_304", reason: "점검 중", blockedHours: 18, adr: 89000, estimatedLoss: 66750, recoverBy: "15:00 점검 완료 시 오늘 재판매 가능", status: "조치 필요" },
+  { id: "leak_002", roomId: "room_103", reason: "청소 필요", blockedHours: 4, adr: 69000, estimatedLoss: 11500, recoverBy: "13:30 전 확인 시 손실 없음", status: "관찰" },
+];
+
+const automationAlerts = [
+  { id: "alert_001", channel: "카카오", title: "청소 지연 30분 전 알림", trigger: "마감 30분 전 미완료", target: "담당자", enabled: true },
+  { id: "alert_002", channel: "앱", title: "판매 중지 손실 5만원 초과", trigger: "예상 손실 50,000원 이상", target: "관리자", enabled: true },
+  { id: "alert_003", channel: "이메일", title: "월간 운영 리포트 발송", trigger: "매월 1일 오전 9시", target: "대표자", enabled: false },
+];
+
+const monthlyOperationsReport = {
+  period: "2026년 6월",
+  score: 84,
+  highlights: [
+    { label: "평균 청소 완료", value: "38분", change: "전월 대비 6분 단축" },
+    { label: "판매 중지 손실", value: "₩412,000", change: "304호 반복 점검 영향" },
+    { label: "반복 문제 객실", value: "3실", change: "502호 냉장고 소음 3회" },
+    { label: "채널 동기화 실패", value: "5회", change: "익스피디아 3회" },
+  ],
+  recommendations: ["304호 욕실 배수 정밀 점검", "수건 최소 재고 45장 → 60장 상향", "청소 마감 30분 전 자동 알림 유지"],
+};
+
 const monthlyRevenue = [
   { label: "1월", value: 24 },
   { label: "2월", value: 28 },
@@ -333,6 +362,16 @@ function workloadClass(load) {
   if (load === "높음") return "urgent";
   if (load === "주의") return "high";
   return "normal";
+}
+
+function riskScoreClass(score) {
+  if (score >= 80) return "urgent";
+  if (score >= 65) return "high";
+  return "normal";
+}
+
+function alertStatusClass(enabled) {
+  return enabled ? "approved" : "hold";
 }
 
 function formatShortDate(value) {
@@ -984,6 +1023,177 @@ function renderMaintenanceDepth() {
   `;
 }
 
+function renderPredictiveRiskPanel() {
+  return `
+    <div class="insight-list">
+      ${predictiveRisks
+        .map((risk) => {
+          const room = getRoom(risk.roomId);
+          return `
+            <article class="risk-card">
+              <div class="risk-score ${riskScoreClass(risk.score)}">
+                <strong>${risk.score}</strong>
+                <span>점</span>
+              </div>
+              <div class="risk-main">
+                <div class="task-title-row">
+                  <span class="task-type">${risk.type}</span>
+                  <strong>${room.name} · ${risk.title}</strong>
+                  <span class="status-badge ${risk.status === "확인 완료" ? "approved" : "pending"}">${risk.status}</span>
+                </div>
+                <p>${risk.signal}</p>
+                <small>${risk.action}</small>
+              </div>
+              ${
+                risk.status === "확인 완료"
+                  ? `<button class="quiet-button" type="button" disabled>확인됨</button>`
+                  : `<button class="quiet-button risk-ack" data-risk="${risk.id}" type="button">확인</button>`
+              }
+            </article>
+          `;
+        })
+        .join("")}
+    </div>
+  `;
+}
+
+function renderRevenueLeakagePanel() {
+  const totalLoss = revenueLeakage.reduce((sum, item) => sum + (item.status === "완료" ? 0 : item.estimatedLoss), 0);
+  return `
+    <div class="leakage-summary">
+      <span>오늘 예상 회수 가능 손실</span>
+      <strong>${formatWon(totalLoss)}</strong>
+    </div>
+    <div class="detail-list">
+      ${revenueLeakage
+        .map((item) => {
+          const room = getRoom(item.roomId);
+          return `
+            <article class="leakage-row">
+              <div>
+                <strong>${room.name} · ${item.reason}</strong>
+                <span>${item.blockedHours}시간 제한 · ADR ${formatWon(item.adr)}</span>
+                <small>${item.recoverBy}</small>
+              </div>
+              <div class="leakage-amount">
+                <strong>${formatWon(item.estimatedLoss)}</strong>
+                <span class="status-badge ${item.status === "완료" ? "approved" : "pending"}">${item.status}</span>
+              </div>
+              ${
+                item.status === "완료"
+                  ? `<button class="quiet-button" type="button" disabled>완료됨</button>`
+                  : `<button class="quiet-button leakage-resolve" data-leak="${item.id}" type="button">조치</button>`
+              }
+            </article>
+          `;
+        })
+        .join("")}
+    </div>
+  `;
+}
+
+function renderAutomationAlertsPanel() {
+  return `
+    <div class="detail-list">
+      ${automationAlerts
+        .map(
+          (alert) => `
+            <article class="automation-row">
+              <div>
+                <strong>${alert.title}</strong>
+                <span>${alert.channel} · ${alert.target} · ${alert.trigger}</span>
+              </div>
+              <span class="status-badge ${alertStatusClass(alert.enabled)}">${alert.enabled ? "켜짐" : "꺼짐"}</span>
+              <button class="quiet-button alert-toggle" data-alert="${alert.id}" type="button">${alert.enabled ? "끄기" : "켜기"}</button>
+            </article>
+          `,
+        )
+        .join("")}
+    </div>
+  `;
+}
+
+function renderMonthlyOperationsReport() {
+  return `
+    <div class="report-score-card">
+      <div>
+        <span>${monthlyOperationsReport.period}</span>
+        <strong>${monthlyOperationsReport.score}점</strong>
+        <p>운영 안정도 더미 스코어</p>
+      </div>
+      <button class="ghost-button report-export" type="button">리포트 생성</button>
+    </div>
+    <div class="ops-report-grid">
+      ${monthlyOperationsReport.highlights
+        .map(
+          (item) => `
+            <article class="ops-report-item">
+              <span>${item.label}</span>
+              <strong>${item.value}</strong>
+              <p>${item.change}</p>
+            </article>
+          `,
+        )
+        .join("")}
+    </div>
+    <div class="recommendation-list">
+      ${monthlyOperationsReport.recommendations.map((item) => `<span>${item}</span>`).join("")}
+    </div>
+  `;
+}
+
+function renderMaintenanceInsights() {
+  const openRisks = predictiveRisks.filter((risk) => risk.status !== "확인 완료").length;
+  const totalLoss = revenueLeakage.reduce((sum, item) => sum + (item.status === "완료" ? 0 : item.estimatedLoss), 0);
+  const enabledAlerts = automationAlerts.filter((alert) => alert.enabled).length;
+  return `
+    <div class="maintenance-insights">
+      <div class="section-head compact">
+        <div>
+          <h2>3차 운영 인사이트</h2>
+          <p>반복 고장, 청소 지연, 판매 손실, 자동 알림을 더미 신호로 미리 보여줍니다.</p>
+        </div>
+      </div>
+      <div class="insight-summary">
+        <div><span>열린 리스크</span><strong>${openRisks}건</strong></div>
+        <div><span>예상 손실</span><strong>${formatWon(totalLoss)}</strong></div>
+        <div><span>자동 알림</span><strong>${enabledAlerts}개</strong></div>
+        <div><span>월간 점수</span><strong>${monthlyOperationsReport.score}점</strong></div>
+      </div>
+      <div class="maintenance-insight-grid">
+        <div class="maintenance-panel maintenance-panel-wide">
+          <div class="panel-head">
+            <h3>고장 반복 감지·청소 지연 예측</h3>
+            <span>신고 횟수, 작업 마감, 재고 신호를 묶어 우선순위를 잡습니다.</span>
+          </div>
+          ${renderPredictiveRiskPanel()}
+        </div>
+        <div class="maintenance-panel">
+          <div class="panel-head">
+            <h3>판매 중지 손실</h3>
+            <span>막힌 객실이 오늘 얼마를 놓칠 수 있는지 보여줍니다.</span>
+          </div>
+          ${renderRevenueLeakagePanel()}
+        </div>
+        <div class="maintenance-panel">
+          <div class="panel-head">
+            <h3>자동 알림</h3>
+            <span>실제 발송 전, 어떤 알림이 필요한지 검증합니다.</span>
+          </div>
+          ${renderAutomationAlertsPanel()}
+        </div>
+        <div class="maintenance-panel maintenance-panel-wide">
+          <div class="panel-head">
+            <h3>월간 운영 리포트</h3>
+            <span>반복 이슈와 손실을 다음 달 운영 계획으로 연결합니다.</span>
+          </div>
+          ${renderMonthlyOperationsReport()}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function renderMaintenanceCenter() {
   const openTasks = getOpenMaintenanceTasks();
   const channelIssues = channels.filter((channel) => channel.status !== "연결됨");
@@ -1034,6 +1244,7 @@ function renderMaintenanceCenter() {
         ${renderMaintenanceLog()}
       </div>
       ${renderMaintenanceDepth()}
+      ${renderMaintenanceInsights()}
     </section>
   `;
 }
@@ -1762,6 +1973,41 @@ function bindMaintenanceControls() {
       }
       showToast(`${proof.file} 더미 증빙을 확인했습니다.`);
     });
+  });
+
+  document.querySelectorAll(".risk-ack").forEach((button) => {
+    button.addEventListener("click", () => {
+      const risk = predictiveRisks.find((item) => item.id === button.dataset.risk);
+      if (!risk) return;
+      risk.status = "확인 완료";
+      showToast(`${risk.title} 리스크를 확인 완료로 표시했습니다.`);
+      renderTodayView();
+    });
+  });
+
+  document.querySelectorAll(".leakage-resolve").forEach((button) => {
+    button.addEventListener("click", () => {
+      const leak = revenueLeakage.find((item) => item.id === button.dataset.leak);
+      if (!leak) return;
+      const room = getRoom(leak.roomId);
+      leak.status = "완료";
+      showToast(`${room.name} ${leak.reason} 손실 조치를 완료했습니다.`);
+      renderTodayView();
+    });
+  });
+
+  document.querySelectorAll(".alert-toggle").forEach((button) => {
+    button.addEventListener("click", () => {
+      const alert = automationAlerts.find((item) => item.id === button.dataset.alert);
+      if (!alert) return;
+      alert.enabled = !alert.enabled;
+      showToast(`${alert.title}을 ${alert.enabled ? "켰습니다" : "껐습니다"}.`);
+      renderTodayView();
+    });
+  });
+
+  document.querySelector(".report-export")?.addEventListener("click", () => {
+    showToast(`${monthlyOperationsReport.period} 운영 리포트를 더미 생성했습니다.`);
   });
 }
 
